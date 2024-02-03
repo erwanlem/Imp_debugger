@@ -1,0 +1,15 @@
+var y;
+var x;
+
+function main() {
+  var x = (x * y);
+  var y = 3;
+  var x = 2;
+  
+  x = 2;
+  y = 3;
+  x = (x * y);
+  print((48 + x));
+}
+
+

@@ -1,0 +1,26 @@
+
+function f() {
+  var a = 10;
+  var z = 1;
+  
+  z = 1;
+  a = 10;
+  print((a + 10));
+  return(a);
+}
+
+function main() {
+  var x = f();
+  var t = {1; (1 + 1); 2; };
+  var z = 0;
+  var x = 0;
+  
+  x = 0;
+  z = 0;
+  t = {1; (1 + 1); 2; };
+  t[2] = (t[0] + t[1]);
+  print(t[2]);
+  x = f();
+}
+
+

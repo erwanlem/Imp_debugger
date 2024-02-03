@@ -1,0 +1,14 @@
+Compilation :
+  dune build
+
+Exécution :
+  ./impcat.exe tests/min.imp
+
+Nettoyage :
+  dune clean
+
+Répertoire des produits de compilation
+  _build/default/
+En particulier, fichiers d'analyse de menhir :
+  _build/default/impparser.automaton
+  _build/default/impparser.conflicts

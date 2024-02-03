@@ -1,0 +1,9 @@
+function main() {
+  if (x <= y) {
+    x = x+1;
+    y = y+2;
+  } else {
+    if (x == y+1) {}
+    else { x = y; }
+  }
+}
