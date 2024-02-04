@@ -7,6 +7,16 @@ let tmp = ref Null
 let env = ref Env.empty
 let undo_stack = ref []
 
+(*
+   Appels de fonction
+  
+   On s'inspire des continuations. À chaque instruction on appelle evalf qui renvoie None s'il n'y a 
+   pas d'appel de fonction dans l'expression. Sinon la fonction rend Some(f, e) avec f la fonction à 
+   appeler et e l'expression à évaluer ensuite.
+   
+*)
+
+
 
 (* Fonction principale *)
 let exec_prog (p : program): unit =
@@ -18,21 +28,37 @@ let exec_prog (p : program): unit =
       | VInt i  -> Printf.printf "%d%!" i
       | VBool b -> Printf.printf "%b%!" b
       | _       -> Printf.printf "Null%!"); ([], env)
-    | Set (s, e)     -> let env' = Env.add s (eval e env) env in ([], env')
+    | Set (s, e)     ->
+      (match evalf e env with
+      | None -> let env' = Env.add s (eval e env) env in ([], env')
+      | Some (f, e') -> 
+        local_env_stack := (env :: !local_env_stack);
+        (f.code @ [Set(s, e')], Env.empty) )
 
     | If (e, s1, s2) ->
-      (match eval e env with
-      | VBool b -> if b then (s1, env) else (s2, env)
-      | _ -> ([], env))
+      (match evalf e env with
+        | None -> if evalb e env then (s1, env) else (s2, env)
+        | Some (f, e') ->
+          local_env_stack := (env :: !local_env_stack);
+          (f.code @ [If(e', s1, s2)], Env.empty) )
+
     | While (e, s)   ->
-      (match eval e env with
-      | VBool b ->  if b then (s @ [While(e, s)], env) else ([], env)
-      | _ -> assert false)
+      (match evalf e env with
+        | None -> if evalb e env then (s @ [While(e, s)], env) else ([], env)
+        | Some (f, e') -> 
+          local_env_stack := (env :: !local_env_stack);
+          (f.code @ [While(e', s)], Env.empty) )
     
-    | Return e       -> tmp := eval e env;
-                        let env = List.hd !local_env_stack in
-                        local_env_stack := List.tl !local_env_stack;
-                        ([], env)
+    | Return e       ->
+      (match evalf e env with
+      | None -> 
+          tmp := eval e env;
+          let env = List.hd !local_env_stack in
+          local_env_stack := List.tl !local_env_stack;
+          ([], env) 
+      | Some (f, e') ->
+        local_env_stack := (env :: !local_env_stack);
+        (f.code @ [Return e'], Env.empty) )
 
     | Expr e         -> ignore (eval e env); ([], env)
 
@@ -52,9 +78,41 @@ let exec_prog (p : program): unit =
   and evala e env = match eval e env with
     | VArray a -> a
     | _ -> assert false
-  and evalf v = match v with
-    | Fun e -> 
-    | v     -> v
+  and evalf e env =
+    match e with
+    | Call (s, l)         -> let f = List.find (fun f -> f.name = s) p.functions in
+                            Some (f, Continuation)
+    | Unop (op, e)       -> (match evalf e env with None -> None | Some (f, c) -> Some (f, Unop (op, c)) )
+    | Binop (op, e1, e2) -> (match evalf e1 env, evalf e2 env with
+                              | None, None -> None
+                              | Some (f, c), _ -> Some (f, Binop (op, c, e2))
+                              | None, Some (f, c) -> Some (f, Binop (op, e1, c)))
+    | Array el            -> 
+        (* On parcourt la liste et s'il y a un appel de fonction on renvoie Some(f, c)
+           et la liste modifiée pour avoir l'appel de fonction remplacé par Continuite *)
+        let rec find_array_fun l r =
+          (match l with
+          | [] -> ([], r)
+          | e :: ll -> (match evalf e env with 
+                        | None -> let l', r' = find_array_fun ll r in (e::l', r') 
+                        | Some (f, c) -> if r = None then let l', r' = find_array_fun ll (Some (f, c)) in (c::l', r') 
+                                        else let l', r' = find_array_fun ll r in (e::l', r')) )
+        in 
+        let l', r = find_array_fun el None
+        in
+        (match r with
+        | None -> None
+        | Some(f, c) -> Some(f, Array l')) 
+       
+    | GetArr (e1, e2)     -> 
+      (match evalf e1 env, evalf e2 env with
+      | None, None -> None
+      | Some (f, c), _ -> Some (f, GetArr (c, e2))
+      | None, Some (f, c) -> Some (f, GetArr (e1, c))
+      )
+
+    | _     -> None
+
   and eval (e : expr) env =
     match e with
     | Int i               -> VInt i
@@ -75,18 +133,15 @@ let exec_prog (p : program): unit =
     | Binop (Neq, e1, e2) -> VBool(evali e1 env <> evali e2 env)
     | Binop (And, e1, e2) -> VBool(evalb e1 env && evalb e2 env)
     | Binop (Or, e1, e2)  -> VBool(evalb e1 env || evalb e2 env)
-    | Call (s, l)         -> let f = List.find (fun f -> f.name = s) p.functions in
-                            let instr, env' = eval_call f l env in
-                            Null
+    | Call (s, l)         -> Null (* Cas non utilisé *)
+                            
     | Array el            -> let r = Array.make (List.length el) (VInt 0) in
                             List.iteri (fun i e -> r.(i) <- VInt (evali e env)) el;
                             VArray( r )
     | GetArr (e1, e2)     -> let a = evala e1 env in
                             let i = evali e2 env in
                             a.(i)
-  and eval_call f args env =
-    local_env_stack := (env :: !local_env_stack);
-    (f.code, Env.empty)
+    | Continuation        -> !tmp
   
   in
   

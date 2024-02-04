@@ -16,6 +16,7 @@ type expr =
   | Call   of string * expr list
   | Array  of expr list
   | GetArr of expr * expr
+  | Continuation
 
 type instr =
   | Print  of expr
@@ -31,12 +32,8 @@ type value =
   | VInt  of int
   | VBool of bool
   | VArray of value array
-  | Fun    of expr
   | Null
 
-type line =
-  | Decl of expr
-  | Instr of instr
 
 
 type function_def = {

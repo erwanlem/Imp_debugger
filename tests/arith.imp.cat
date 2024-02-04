@@ -1,12 +1,25 @@
 
-function main() {
-  var i = 0;
+function g() {
   
+  return((10 + 10));
+}
+
+function f() {
+  var x = 10;
+  
+  x = 10;
+  print(0);
+  return((g() + 50));
+}
+
+function main() {
+  var i = f();
+  var i = 0;
+  var t = {f(); (1 + 1); f(); };
+  
+  t = {f(); (1 + 1); f(); };
   i = 0;
-  while ((i < 5)) {
-    print(i);
-    i = (i + 1);
-  }
+  i = f();
 }
 
 

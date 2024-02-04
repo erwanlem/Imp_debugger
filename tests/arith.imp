@@ -1,7 +1,17 @@
+function g() {
+  return (10 + 10);
+}
+
+
+function f() {
+  var x = 10;
+  print(0);
+  return (g() + 50);
+}
+
+
 function main() {
+  var t = { f(); 1+1; f(); };
   var i = 0;
-  while (i < 5) {
-    print(i);
-    i = i+1;
-  }
+  i = f();
 }
