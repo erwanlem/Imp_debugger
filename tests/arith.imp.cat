@@ -5,19 +5,18 @@ function g() {
 }
 
 function f() {
+  var y = 20;
   var x = 10;
   
   x = 10;
-  print(0);
-  return((g() + 50));
+  y = 20;
+  return(x);
 }
 
 function main() {
   var i = f();
   var i = 0;
-  var t = {f(); (1 + 1); f(); };
   
-  t = {f(); (1 + 1); f(); };
   i = 0;
   i = f();
 }

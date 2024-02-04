@@ -1,10 +1,14 @@
 open Imp
 
-
+(* Pile environnements locaux aux fonctions *)
 let local_env_stack = ref []
+
+(* Variable temporaire résultat de fonction *)
 let tmp = ref Null
 
+(* Environnement local *)
 let env = ref Env.empty
+
 let undo_stack = ref []
 
 (*
@@ -24,30 +28,29 @@ let exec_prog (p : program): unit =
   let rec exec_instr (i : instr) env =
     match i with
     | Print e        ->
-      (match eval e env with
-      | VInt i  -> Printf.printf "%d%!" i
-      | VBool b -> Printf.printf "%b%!" b
-      | _       -> Printf.printf "Null%!"); ([], env)
+      (match evalf e env with
+      | None -> (match eval e env with VInt i  -> Printf.printf "%d%!" i
+                                    | VBool b -> Printf.printf "%b%!" b
+                                    | _       -> Printf.printf "Null%!"); ([], env)
+      | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
+                        (f.code @ [Print(e')], Env.empty))
     | Set (s, e)     ->
       (match evalf e env with
       | None -> let env' = Env.add s (eval e env) env in ([], env')
-      | Some (f, e') -> 
-        local_env_stack := (env :: !local_env_stack);
-        (f.code @ [Set(s, e')], Env.empty) )
+      | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
+                        (f.code @ [Set(s, e')], Env.empty) )
 
     | If (e, s1, s2) ->
       (match evalf e env with
         | None -> if evalb e env then (s1, env) else (s2, env)
-        | Some (f, e') ->
-          local_env_stack := (env :: !local_env_stack);
-          (f.code @ [If(e', s1, s2)], Env.empty) )
+        | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
+                          (f.code @ [If(e', s1, s2)], Env.empty) )
 
     | While (e, s)   ->
       (match evalf e env with
         | None -> if evalb e env then (s @ [While(e, s)], env) else ([], env)
-        | Some (f, e') -> 
-          local_env_stack := (env :: !local_env_stack);
-          (f.code @ [While(e', s)], Env.empty) )
+        | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
+                          (f.code @ [While(e', s)], Env.empty) )
     
     | Return e       ->
       (match evalf e env with
@@ -56,9 +59,8 @@ let exec_prog (p : program): unit =
           let env = List.hd !local_env_stack in
           local_env_stack := List.tl !local_env_stack;
           ([], env) 
-      | Some (f, e') ->
-        local_env_stack := (env :: !local_env_stack);
-        (f.code @ [Return e'], Env.empty) )
+      | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
+                        (f.code @ [Return e'], Env.empty) )
 
     | Expr e         -> ignore (eval e env); ([], env)
 
@@ -89,7 +91,7 @@ let exec_prog (p : program): unit =
                               | None, Some (f, c) -> Some (f, Binop (op, e1, c)))
     | Array el            -> 
         (* On parcourt la liste et s'il y a un appel de fonction on renvoie Some(f, c)
-           et la liste modifiée pour avoir l'appel de fonction remplacé par Continuite *)
+           et la liste modifiée pour avoir l'appel de fonction remplacé par Continuation *)
         let rec find_array_fun l r =
           (match l with
           | [] -> ([], r)
@@ -97,13 +99,11 @@ let exec_prog (p : program): unit =
                         | None -> let l', r' = find_array_fun ll r in (e::l', r') 
                         | Some (f, c) -> if r = None then let l', r' = find_array_fun ll (Some (f, c)) in (c::l', r') 
                                         else let l', r' = find_array_fun ll r in (e::l', r')) )
-        in 
-        let l', r = find_array_fun el None
-        in
-        (match r with
-        | None -> None
-        | Some(f, c) -> Some(f, Array l')) 
-       
+        in let l', r = find_array_fun el None
+        in (match r with
+            | None -> None
+            | Some(f, c) -> Some(f, Array l')) 
+    
     | GetArr (e1, e2)     -> 
       (match evalf e1 env, evalf e2 env with
       | None, None -> None
@@ -154,7 +154,7 @@ let exec_prog (p : program): unit =
     | [] -> ([], env)
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
                   in 
-                  ignore (Console.clear_console window); 
+                  (*ignore (Console.clear_console window); *)
                   Console.print_env window env'; 
                   ((instr' @ l'), env')
   in
@@ -162,7 +162,7 @@ let exec_prog (p : program): unit =
   (* fonction retour arrière *)
   let step_back prev seq env =
     let instr, env' = prev in
-    ignore (Console.clear_console window);
+    (*ignore (Console.clear_console window);*)
     Console.print_env window env';
     (instr::seq, env')
   
@@ -179,7 +179,7 @@ let exec_prog (p : program): unit =
       | "exit"      -> Console.close_console (); false
 
 
-      | "next"      -> undo_stack := ((List.hd (!p)), !env) :: !undo_stack;
+      | "next"      ->  undo_stack := ((List.hd (!p)), !env) :: !undo_stack;
                         let p', env' = step (!p) (!env) in
                         p := p';
                         env := env';
@@ -188,7 +188,7 @@ let exec_prog (p : program): unit =
                         
       | "undo"      -> if List.length (!undo_stack) > 0 then
                        let p', env' = step_back (List.hd (!undo_stack)) (!p) (!env) in
-                        undo_stack := List.tl (!undo_stack);
+                        Printf.printf "%d\n%!" (List.length !undo_stack);
                         p := p';
                         env := env';
                         true

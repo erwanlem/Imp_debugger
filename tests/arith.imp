@@ -5,13 +5,12 @@ function g() {
 
 function f() {
   var x = 10;
-  print(0);
-  return (g() + 50);
+  var y = 20;
+  return (x);
 }
 
 
 function main() {
-  var t = { f(); 1+1; f(); };
   var i = 0;
   i = f();
 }
