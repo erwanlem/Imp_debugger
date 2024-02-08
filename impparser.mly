@@ -40,30 +40,25 @@
 (* À COMPLÉTER *)
 
 program:
-| affect=list(instr) functions=list(fun_def) EOF 
-    { {globals=List.fold_left (fun acc a -> match a with
-                                              | Set(name, value) -> (name, Some value)::acc
-                                              | Expr e -> (match e with
-                                                            | Var name -> (name, None)::acc
-                                                            | _ -> acc )
-                                              | _ -> acc) [] affect
+| decl=list(var_decl) affect=list(instr) functions=list(fun_def) EOF 
+    { {globals=decl
     ; functions; main=List.find (fun f -> f.name = "main") functions } }
 ;
 
 fun_def:
 | FUNCTION name=IDENT LPAR p=separated_list(COMMA, expr) RPAR
-    BEGIN code=list(instr) END
+    BEGIN decl=list(var_decl) code=list(instr) END
     { {name; code; params=List.fold_left (fun acc a -> match a with
                                                         | Var name -> name::acc
                                                         | _ -> failwith "Invalid parameters" ) [] p 
-    ; locals=List.fold_left (fun acc a -> match a with
-                            | Set(name, value) -> (name, Some value)::acc
-                            | Expr e -> (match e with
-                                          | Var name -> (name, None)::acc
-                                          | _ -> acc )
-                            | _ -> acc) [] code
+    ; locals=decl
     } }
 ;
+
+var_decl:
+  | VAR id=IDENT SEMI { (id, None) }
+;
+
 
 instr:
 | PRINT LPAR e=expr RPAR SEMI                       { Print(e) }
@@ -83,7 +78,6 @@ expr:
 | b=BOOL                                             { Bool b }
 | LPAR e=expr RPAR                                   { e }
 | e1=expr op=binop e2=expr                           { Binop(op, e1, e2) }
-| VAR name=IDENT                                     { Var name }
 | id=IDENT                                           { Var id }
 | op=unop e=expr                                     { Unop(op, e) }
 | BEGIN l=list(terminated(expr, SEMI)) END           { Array l }

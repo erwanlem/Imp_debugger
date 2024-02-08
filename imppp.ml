@@ -30,6 +30,7 @@ let rec print_expr fmt = function
   | Call(f, args) -> fprintf fmt "%s(@[%a@])" f print_args args
   | Array(elts) -> fprintf fmt "{@[%a@]}" print_elts elts
   | GetArr(e1, e2) -> fprintf fmt "@[%a[%a]@]" print_expr e1 print_expr e2
+  | _ -> ()
 and print_args fmt = function
   | [] -> fprintf fmt ""
   | [a] -> fprintf fmt "%a" print_expr a

@@ -81,6 +81,23 @@ let print_env win env =
 
   let _err = Curses.move y x in ()
 
+  (* Affichage des variables *)
+  (*let rec print_value = function
+  | VBool b  -> Printf.sprintf "%b" b
+  | VInt  i  -> Printf.sprintf "%d" i
+  | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a ^ "]"
+  | Null     -> Printf.sprintf "Null"
+  in
+  Env.iter (
+    fun s v ->
+      let out = s ^ ": " ^ (print_value v) ^ "" in
+      Printf.printf "%s%!" out
+      
+      ) env;
+  Printf.printf "\n%!";
+  let y, x = Curses.getyx win in
+  let _err = Curses.move y 1 in ()*)
+
 
 let print_out win v =
   (*let y, x = Curses.getyx win in*)
@@ -90,4 +107,19 @@ let clear_console win =
   let y, x = Curses.getyx win in
   Curses.erase ();
   Curses.clear ();
-  Curses.move y x;
+  Curses.move y x
+
+
+
+
+
+
+
+let write_out msg =
+  let file = "log.txt" in
+  (* Write message to file *)
+  let oc = open_out file in
+  (* create or truncate file, return channel *)
+  Printf.fprintf oc "%s\n" msg;
+  (* write something *)
+  close_out oc

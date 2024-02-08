@@ -4,7 +4,7 @@ open Imp
 let local_env_stack = ref []
 
 (* Variable temporaire résultat de fonction *)
-let tmp = ref Null
+let tmp = ref []
 
 (* Environnement local *)
 let env = ref Env.empty
@@ -18,6 +18,12 @@ let undo_stack = ref []
    pas d'appel de fonction dans l'expression. Sinon la fonction rend Some(f, e) avec f la fonction à 
    appeler et e l'expression à évaluer ensuite.
    
+
+   Pour chaque instruction:
+   - Si l'instruction contient un appel de fonction
+        - ajouter le code de la fonction
+        - ajouter l'instruction avec l'appel de fonction qui attend le résultat
+   - Si pas d'appel de fonction alors évaluer l'instruction
 *)
 
 
@@ -54,8 +60,9 @@ let exec_prog (p : program): unit =
     
     | Return e       ->
       (match evalf e env with
-      | None -> 
-          tmp := eval e env;
+      | None ->
+          let ev = eval e env in
+          tmp := ev :: !tmp;
           let env = List.hd !local_env_stack in
           local_env_stack := List.tl !local_env_stack;
           ([], env) 
@@ -141,7 +148,9 @@ let exec_prog (p : program): unit =
     | GetArr (e1, e2)     -> let a = evala e1 env in
                             let i = evali e2 env in
                             a.(i)
-    | Continuation        -> !tmp
+    | Continuation        -> let h = List.hd !tmp in 
+                              tmp := List.tl !tmp; 
+                              h
   
   in
   
@@ -154,17 +163,18 @@ let exec_prog (p : program): unit =
     | [] -> ([], env)
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
                   in 
-                  (*ignore (Console.clear_console window); *)
+                  ignore (Console.clear_console window);
                   Console.print_env window env'; 
                   ((instr' @ l'), env')
   in
 
+
   (* fonction retour arrière *)
   let step_back prev seq env =
-    let instr, env' = prev in
-    (*ignore (Console.clear_console window);*)
+    let instr, env', stack, ret = prev in
+    ignore (Console.clear_console window);
     Console.print_env window env';
-    (instr::seq, env')
+    (instr, env', stack, ret)
   
   in
 
@@ -179,7 +189,12 @@ let exec_prog (p : program): unit =
       | "exit"      -> Console.close_console (); false
 
 
-      | "next"      ->  undo_stack := ((List.hd (!p)), !env) :: !undo_stack;
+      | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
+                        undo_stack := (!p, !env, !local_env_stack, !tmp) :: !undo_stack;
+                        
+                        let pr_list = List.fold_left (fun acc e -> acc ^ (string_of_value e ^ "; ")) "" !tmp in
+                        Console.write_out (pr_list);
+
                         let p', env' = step (!p) (!env) in
                         p := p';
                         env := env';
@@ -187,11 +202,14 @@ let exec_prog (p : program): unit =
 
                         
       | "undo"      -> if List.length (!undo_stack) > 0 then
-                       let p', env' = step_back (List.hd (!undo_stack)) (!p) (!env) in
-                        Printf.printf "%d\n%!" (List.length !undo_stack);
-                        p := p';
-                        env := env';
-                        true
+                      (
+                        (* Récupère l'état précédent *)
+                       let p', env', stack, ret = step_back (List.hd (!undo_stack)) (!p) (!env) in
+                       undo_stack := List.tl !undo_stack;
+                        p := p'; env := env'; tmp := ret;
+                        local_env_stack := stack;
+                        Console.write_out (string_of_int (List.length !p));
+                        true)
                       else true
 
 

@@ -1,23 +1,37 @@
 
 function g() {
+  var g;
   
-  return((10 + 10));
+  g = (10 + 10);
+  return(g);
+}
+
+function h() {
+  var h;
+  
+  h = 30;
+  return(h);
 }
 
 function f() {
-  var y = 20;
-  var x = 10;
   
-  x = 10;
-  y = 20;
-  return(x);
+  return((g() + h()));
 }
 
 function main() {
-  var i = f();
-  var i = 0;
+  var t;
+  var i;
+  var a;
+  var j;
+  var k;
+  var l;
   
+  t = {(f() + g()); g(); (f() + 12); };
+  a = (f() + g());
   i = 0;
+  j = 1;
+  k = 2;
+  l = 3;
   i = f();
 }
 

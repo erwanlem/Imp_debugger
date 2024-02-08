@@ -35,6 +35,12 @@ type value =
   | Null
 
 
+let string_of_value v =
+  match v with 
+    | VInt i  -> Printf.sprintf "%d%!" i
+    | VBool b -> Printf.sprintf "%b%!" b
+    | _       -> "Null"
+
 
 type function_def = {
   name:   string;
