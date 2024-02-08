@@ -30,6 +30,7 @@ let undo_stack = ref []
 
 (* Fonction principale *)
 let exec_prog (p : program): unit =
+  let p_seq = ref (p.main.code) in
   
   let rec exec_instr (i : instr) env =
     match i with
@@ -164,7 +165,8 @@ let exec_prog (p : program): unit =
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
                   in 
                   ignore (Console.clear_console window);
-                  Console.print_env window env'; 
+                  (*Console.print_env window env';*)
+                  Console.print_code window p;
                   ((instr' @ l'), env')
   in
 
@@ -179,24 +181,21 @@ let exec_prog (p : program): unit =
   in
 
 
-
-  let p = ref (p.main.code) in
-
   let match_entry entry =
     fun () ->
-      if (!p) = [] then (Console.close_console (); false) else 
+      if (!p_seq) = [] then (Console.close_console (); false) else 
       match entry with
       | "exit"      -> Console.close_console (); false
 
 
       | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
-                        undo_stack := (!p, !env, !local_env_stack, !tmp) :: !undo_stack;
+                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp) :: !undo_stack;
                         
                         let pr_list = List.fold_left (fun acc e -> acc ^ (string_of_value e ^ "; ")) "" !tmp in
                         Console.write_out (pr_list);
 
-                        let p', env' = step (!p) (!env) in
-                        p := p';
+                        let p', env' = step (!p_seq) (!env) in
+                        p_seq := p';
                         env := env';
                         true
 
@@ -204,11 +203,11 @@ let exec_prog (p : program): unit =
       | "undo"      -> if List.length (!undo_stack) > 0 then
                       (
                         (* Récupère l'état précédent *)
-                       let p', env', stack, ret = step_back (List.hd (!undo_stack)) (!p) (!env) in
+                       let p', env', stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in
                        undo_stack := List.tl !undo_stack;
-                        p := p'; env := env'; tmp := ret;
+                        p_seq := p'; env := env'; tmp := ret;
                         local_env_stack := stack;
-                        Console.write_out (string_of_int (List.length !p));
+                        Console.write_out (string_of_int (List.length !p_seq));
                         true)
                       else true
 

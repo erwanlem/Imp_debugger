@@ -111,7 +111,13 @@ let clear_console win =
 
 
 
-
+let print_code win prog =
+  let y, x = Curses.getyx win in
+  let begy, begx = Curses.getbegyx win in
+  let _err = Curses.move begy begx in
+  ignore (Curses.move (begy+1) (begx));
+  let _err = Curses.addstr (Printf.sprintf "%s" (Imppp.print_program prog)) in
+  let _err = Curses.move y x in ()
 
 
 

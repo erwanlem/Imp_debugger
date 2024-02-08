@@ -16,12 +16,9 @@ let () =
     let prog = Impparser.program Implexer.token lb in
     close_in c;
     Interpreter.exec_prog prog;
-    let out_file = file ^ ".cat" in
-    let cout = open_out out_file in
-    let outf = formatter_of_out_channel cout in
-    Imppp.print_program outf prog;
-    pp_print_flush outf ();
-    close_out cout;
+    
+    (*Printf.printf "%s" (Imppp.print_program prog);*)
+    
     exit 0
   with
     | Implexer.Error s ->
