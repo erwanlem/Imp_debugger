@@ -155,7 +155,7 @@ let exec_prog (p : program): unit =
   
   in
   
-  let window = Console.init_console () in
+  Console.init_console ();
 
 
   (* fonction avance d'un pas *)
@@ -164,9 +164,9 @@ let exec_prog (p : program): unit =
     | [] -> ([], env)
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
                   in 
-                  ignore (Console.clear_console window);
-                  (*Console.print_env window env';*)
-                  Console.print_code window p;
+                  ignore (Console.clear_console ());
+                  Console.print_env env';
+                  Console.print_code p;
                   ((instr' @ l'), env')
   in
 
@@ -174,8 +174,8 @@ let exec_prog (p : program): unit =
   (* fonction retour arrière *)
   let step_back prev seq env =
     let instr, env', stack, ret = prev in
-    ignore (Console.clear_console window);
-    Console.print_env window env';
+    ignore (Console.clear_console ());
+    Console.print_env env';
     (instr, env', stack, ret)
   
   in
@@ -215,7 +215,7 @@ let exec_prog (p : program): unit =
       | c           -> true
 
   in
-  Console.match_key window match_entry;
+  Console.match_key match_entry;
 
   (*exec_steps p.code env*)
   ()

@@ -2,8 +2,15 @@ open Imp
 
 let buffer = ref ""
 
+let window = ref None
 
-let rec match_key win match_entry =
+let get_window () =
+  match !window with
+  | Some w -> w
+  | None   -> failwith "Uninitialized window"
+
+let rec match_key match_entry =
+  let window = get_window () in
   let _err = Curses.noecho () in
   let input = Curses.getch () in
   if input >= 0 && input <= 255 then
@@ -11,45 +18,46 @@ let rec match_key win match_entry =
     (if input = Char.code '\n' then
         (let _err=Curses.clrtoeol () in ();
         let _err=Curses.deleteln () in ();
-        let y, x = Curses.getmaxyx win in
+        let y, x = Curses.getmaxyx window in
         let _err = Curses.move (y-1) 0 in ();
         let _err = Curses.refresh () in ();
         (if not (match_entry (!buffer) ()) then ()
-        else (buffer := ""; match_key win match_entry)))
+        else (buffer := ""; match_key match_entry)))
     else
       let _err = Curses.addch input in
-      (buffer := !buffer ^ (Char.escaped (char_of_int input)); match_key win match_entry) )
+      (buffer := !buffer ^ (Char.escaped (char_of_int input)); match_key match_entry) )
   else (* Entrées caractères spéciaux *)
     (if input = Curses.Key.left then
-      if not (match_entry "undo" ()) then () else match_key win match_entry
+      if not (match_entry "undo" ()) then () else match_key match_entry
     else
       if input = Curses.Key.right then
-        if not (match_entry "next" ()) then () else match_key win match_entry
+        if not (match_entry "next" ()) then () else match_key match_entry
     else
       if input = Curses.Key.up then
-        let _err = Curses.addch (int_of_char 'U') in match_key win match_entry
+        let _err = Curses.addch (int_of_char 'U') in match_key match_entry
     else
       if input = Curses.Key.down then
-        let _err = Curses.addch (int_of_char 'D') in match_key win match_entry
+        let _err = Curses.addch (int_of_char 'D') in match_key match_entry
     else
       if input = Curses.Key.backspace then
-        (let y, x = Curses.getyx win in
+        (let y, x = Curses.getyx window in
         let _err = Curses.mvdelch y (x-1) in
         if String.length (!buffer) > 0 then
           buffer := String.sub (!buffer) 0 (String.length (!buffer)-1);
         let _err = Curses.refresh () in
-        match_key win match_entry)
+        match_key match_entry)
     else
-      match_key win match_entry
+      match_key match_entry
     )
 
 
-let init_console () : Curses.window =
-  let window = Curses.initscr () in
-  let _err = Curses.keypad window true in
-  let y, x = Curses.getmaxyx window in
+let init_console () =
+  let w = Curses.initscr () in
+  let _err = Curses.keypad w true in
+  let y, x = Curses.getmaxyx w in
   let _err = Curses.move (y-1) (0) in
-  window
+  window := Some w
+  
 
 let close_console () : unit =
   Curses.endwin ()
@@ -57,10 +65,11 @@ let close_console () : unit =
 
 
 
-let print_env win env =
-  let y, x = Curses.getyx win in
+let print_env env =
+  let window = get_window () in
+  let y, x = Curses.getyx window in
   let h, w = Curses.get_size () in
-  let begy, begx = Curses.getbegyx win in
+  let begy, begx = Curses.getbegyx window in
   let _err = Curses.move begy begx in
   Curses.hline (Char.code '-') w;
   ignore (Curses.move (begy+1) (begx));
@@ -99,23 +108,27 @@ let print_env win env =
   let _err = Curses.move y 1 in ()*)
 
 
-let print_out win v =
-  (*let y, x = Curses.getyx win in*)
+let print_line str =
+  let window = get_window () in
+  let _err = Curses.addstr str in
+  let y, x = Curses.getyx window in
+  let _err = Curses.move (y+1) 1 in
   ()
 
-let clear_console win =
-  let y, x = Curses.getyx win in
+let clear_console () =
+  let window = get_window () in
+  let y, x = Curses.getyx window in
   Curses.erase ();
   Curses.clear ();
   Curses.move y x
 
 
 
-let print_code win prog =
-  let y, x = Curses.getyx win in
-  let begy, begx = Curses.getbegyx win in
-  let _err = Curses.move begy begx in
-  ignore (Curses.move (begy+1) (begx));
+let print_code prog =
+  let window = get_window () in
+  let y, x = Curses.getyx window in
+  let begy, begx = Curses.getbegyx window in
+  let _err = Curses.move (begy+8) begx in
   let _err = Curses.addstr (Printf.sprintf "%s" (Imppp.print_program prog)) in
   let _err = Curses.move y x in ()
 
