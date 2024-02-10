@@ -1,5 +1,8 @@
 open Imp
 
+let instr_id = ref 0
+
+
 let buffer = ref ""
 
 let window = ref None

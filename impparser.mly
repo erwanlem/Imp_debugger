@@ -61,16 +61,16 @@ var_decl:
 
 
 instr:
-| PRINT LPAR e=expr RPAR SEMI                       { Print(e) }
-| IF LPAR e=expr RPAR BEGIN i1=list(instr) END ELSE BEGIN i2=list(instr) END   { If(e, i1, i2) }
-| IF LPAR e=expr RPAR BEGIN i1=list(instr) END      { If(e, i1, []) }
+| PRINT LPAR e=expr RPAR SEMI                       { Print(e, instruction_id ()) }
+| IF LPAR e=expr RPAR BEGIN i1=list(instr) END ELSE BEGIN i2=list(instr) END   { If(e, i1, i2, instruction_id ()) }
+| IF LPAR e=expr RPAR BEGIN i1=list(instr) END      { If(e, i1, [], instruction_id ()) }
 | var=expr EQUAL value=expr SEMI                    { match var with
-                                                      | Var name -> Set (name, value)
-                                                      | GetArr(id, e) -> SetArr(id, e, value) 
+                                                      | Var name -> Set (name, value, instruction_id ())
+                                                      | GetArr(id, e) -> SetArr(id, e, value, instruction_id ()) 
                                                       | _ -> failwith "Invalid ID name" }
-| e=expr SEMI                                       { Expr e }
-| RETURN LPAR e=expr RPAR SEMI                                { Return e }
-| WHILE LPAR cond=expr RPAR BEGIN i=list(instr) END { While(cond, i) }
+| e=expr SEMI                                       { Expr (e, instruction_id ()) }
+| RETURN LPAR e=expr RPAR SEMI                                { Return (e, instruction_id ()) }
+| WHILE LPAR cond=expr RPAR BEGIN i=list(instr) END { While(cond, i, instruction_id ()) }
 ;
 
 expr:

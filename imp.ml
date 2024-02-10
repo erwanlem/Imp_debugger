@@ -1,6 +1,14 @@
 
 module Env = Map.Make(String)
 
+let instruction_id =
+  let id = ref 0 in
+  fun () ->
+    let r = !id in
+    id := !id+1;
+    r
+
+
 type unop = Not | Opp
 type binop = Add | Sub | Mul | Div | Rem
            | Lt | Le | Gt | Ge | Eq | Neq
@@ -19,13 +27,13 @@ type expr =
   | Continuation
 
 type instr =
-  | Print  of expr
-  | Set    of string * expr
-  | If     of expr * seq * seq
-  | While  of expr * seq
-  | Return of expr
-  | Expr   of expr
-  | SetArr of expr * expr * expr
+  | Print  of expr * int
+  | Set    of string * expr * int
+  | If     of expr * seq * seq * int
+  | While  of expr * seq * int
+  | Return of expr * int
+  | Expr   of expr * int
+  | SetArr of expr * expr * expr * int
 and seq = instr list
 
 type value =

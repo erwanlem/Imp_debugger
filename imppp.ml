@@ -40,16 +40,16 @@ and print_elts  = function
   | e::elts -> sprintf  "%s;@ %s" (print_expr e) (print_elts elts)
 
 let rec print_instr  = function
-  | Print e -> sprintf  "print(@[%s@]);" (print_expr e)
-  | Set(x, e) -> sprintf  "%s = @[%s@];" x (print_expr e)
-  | If(e, s1, s2) -> sprintf  
+  | Print (e, id) -> sprintf  "print(@[%s@]);" (print_expr e)
+  | Set(x, e, id) -> sprintf  "%s = @[%s@];" x (print_expr e)
+  | If(e, s1, s2, id) -> sprintf  
                        "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
                        (print_expr e) (print_seq s1) (print_seq s2)
-  | While(e, s) -> sprintf  "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
+  | While(e, s, id) -> sprintf  "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
                      (print_expr e) (print_seq s)
-  | Return e -> sprintf  "return(@[%s@]);" (print_expr e)
-  | Expr e -> sprintf  "@[%s@];" (print_expr e)
-  | SetArr(t, i, e) -> sprintf  "%s[%s] = @[%s@];" 
+  | Return (e, id) -> sprintf  "return(@[%s@]);" (print_expr e)
+  | Expr (e,id) -> sprintf  "@[%s@];" (print_expr e)
+  | SetArr(t, i, e, id) -> sprintf  "%s[%s] = @[%s@];" 
                          (print_expr t) (print_expr i) (print_expr e)
 and print_seq  = function
   | [] -> sprintf  ""

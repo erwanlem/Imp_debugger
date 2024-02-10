@@ -34,32 +34,37 @@ let exec_prog (p : program): unit =
   
   let rec exec_instr (i : instr) env =
     match i with
-    | Print e        ->
+    | Print (e, id)        ->
+      Console.instr_id := id;
       (match evalf e env with
       | None -> (match eval e env with VInt i  -> Printf.printf "%d%!" i
                                     | VBool b -> Printf.printf "%b%!" b
                                     | _       -> Printf.printf "Null%!"); ([], env)
       | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
-                        (f.code @ [Print(e')], Env.empty))
-    | Set (s, e)     ->
+                        (f.code @ [Print(e', id)], Env.empty))
+    | Set (s, e, id)     ->
+      Console.instr_id := id;
       (match evalf e env with
       | None -> let env' = Env.add s (eval e env) env in ([], env')
       | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
-                        (f.code @ [Set(s, e')], Env.empty) )
+                        (f.code @ [Set(s, e', id)], Env.empty) )
 
-    | If (e, s1, s2) ->
+    | If (e, s1, s2, id) ->
+      Console.instr_id := id;
       (match evalf e env with
         | None -> if evalb e env then (s1, env) else (s2, env)
         | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
-                          (f.code @ [If(e', s1, s2)], Env.empty) )
+                          (f.code @ [If(e', s1, s2, id)], Env.empty) )
 
-    | While (e, s)   ->
+    | While (e, s, id)   ->
+      Console.instr_id := id;
       (match evalf e env with
-        | None -> if evalb e env then (s @ [While(e, s)], env) else ([], env)
+        | None -> if evalb e env then (s @ [While(e, s, id)], env) else ([], env)
         | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
-                          (f.code @ [While(e', s)], Env.empty) )
+                          (f.code @ [While(e', s, id)], Env.empty) )
     
-    | Return e       ->
+    | Return (e, id)       ->
+      Console.instr_id := id;
       (match evalf e env with
       | None ->
           let ev = eval e env in
@@ -68,16 +73,18 @@ let exec_prog (p : program): unit =
           local_env_stack := List.tl !local_env_stack;
           ([], env) 
       | Some (f, e') -> local_env_stack := (env :: !local_env_stack);
-                        (f.code @ [Return e'], Env.empty) )
+                        (f.code @ [Return (e', id)], Env.empty) )
 
-    | Expr e         -> ignore (eval e env); ([], env)
+    | Expr (e, id)         -> Console.instr_id := id; ignore (eval e env); ([], env)
 
-    | SetArr (e1, e2, e3) -> let a = Array.copy (evala e1 env) in
-                            let i = evali e2 env in
-                            a.(i) <- eval e3 env;
-                            match e1 with
-                            | Var n -> let env' = Env.add n (VArray(a)) env in ([], env')
-                            | _ -> ([], env)
+    | SetArr (e1, e2, e3, id) ->
+        Console.instr_id := id;
+        let a = Array.copy (evala e1 env) in
+        let i = evali e2 env in
+        a.(i) <- eval e3 env;
+        match e1 with
+        | Var n -> let env' = Env.add n (VArray(a)) env in ([], env')
+        | _ -> ([], env)
 
   and evali e env = match eval e env with
     | VInt n -> n
