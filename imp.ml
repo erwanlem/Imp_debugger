@@ -1,6 +1,20 @@
 
 module Env = Map.Make(String)
 
+type value =
+  | VInt  of int
+  | VBool of bool
+  | VArray of value array
+  | Null
+
+
+let string_of_value v =
+  match v with 
+    | VInt i  -> Printf.sprintf "%d%!" i
+    | VBool b -> Printf.sprintf "%b%!" b
+    | _       -> "Null"
+
+
 let instruction_id =
   let id = ref 0 in
   fun () ->
@@ -36,22 +50,9 @@ type instr =
   | SetArr of expr * expr * expr * int
 and seq = instr list
 
-type value =
-  | VInt  of int
-  | VBool of bool
-  | VArray of value array
-  | Null
-
-
-let string_of_value v =
-  match v with 
-    | VInt i  -> Printf.sprintf "%d%!" i
-    | VBool b -> Printf.sprintf "%b%!" b
-    | _       -> "Null"
-
-
 type function_def = {
   name:   string;
+  id  :   int;
   params: string list;
   locals: (string * expr option) list;
   code:   seq;

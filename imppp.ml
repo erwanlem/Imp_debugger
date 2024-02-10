@@ -1,6 +1,22 @@
 open Format
 open Imp
 
+let find_instr = ref false
+let instr_id = ref 0
+
+let write_out msg =
+  let file = "log.txt" in
+  (* Write message to file *)
+  let oc = open_out file in
+  (* create or truncate file, return channel *)
+  Printf.fprintf oc "%s\n" msg;
+  (* write something *)
+  close_out oc
+
+let print_if_find id str =
+  if id = !instr_id then (write_out (Printf.sprintf "[;;]%s[;;]" str); sprintf "[;;]%s[;;]" str)
+  else str
+
 let bop2string = function
   | Add -> "+"
   | Sub -> "-"
@@ -40,17 +56,17 @@ and print_elts  = function
   | e::elts -> sprintf  "%s;@ %s" (print_expr e) (print_elts elts)
 
 let rec print_instr  = function
-  | Print (e, id) -> sprintf  "print(@[%s@]);" (print_expr e)
-  | Set(x, e, id) -> sprintf  "%s = @[%s@];" x (print_expr e)
-  | If(e, s1, s2, id) -> sprintf  
+  | Print (e, id) -> print_if_find id (sprintf  "print(@[%s@]);" (print_expr e))
+  | Set(x, e, id) -> print_if_find id (sprintf  "%s = @[%s@];" x (print_expr e))
+  | If(e, s1, s2, id) -> print_if_find id (sprintf  
                        "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
-                       (print_expr e) (print_seq s1) (print_seq s2)
-  | While(e, s, id) -> sprintf  "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
-                     (print_expr e) (print_seq s)
-  | Return (e, id) -> sprintf  "return(@[%s@]);" (print_expr e)
-  | Expr (e,id) -> sprintf  "@[%s@];" (print_expr e)
-  | SetArr(t, i, e, id) -> sprintf  "%s[%s] = @[%s@];" 
-                         (print_expr t) (print_expr i) (print_expr e)
+                       (print_expr e) (print_seq s1) (print_seq s2))
+  | While(e, s, id) -> print_if_find id (sprintf  "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
+                     (print_expr e) (print_seq s))
+  | Return (e, id) -> print_if_find id (sprintf  "return(@[%s@]);" (print_expr e))
+  | Expr (e,id) -> print_if_find id (sprintf  "@[%s@];" (print_expr e))
+  | SetArr(t, i, e, id) -> print_if_find id (sprintf  "%s[%s] = @[%s@];" 
+                         (print_expr t) (print_expr i) (print_expr e))
 and print_seq  = function
   | [] -> sprintf  ""
   | [i] -> sprintf  "%s" (print_instr i)
@@ -68,8 +84,8 @@ let rec print_vars  = function
                            x (print_expr e) (print_vars vars)
 
 let print_fdef  fdef =
-  sprintf  "@[<v>@[<v 2>function %s(@[%s@]) {@,%s@,%s@]@,}@,@]" 
-    fdef.name (print_params fdef.params) (print_vars fdef.locals) (print_seq fdef.code)
+  print_if_find fdef.id (sprintf  "@[<v>@[<v 2>function %s(@[%s@]) {@,%s@,%s@]@,}@,@]" 
+    fdef.name (print_params fdef.params) (print_vars fdef.locals) (print_seq fdef.code))
 
 let rec print_functions  = function
   | [] -> sprintf  ""

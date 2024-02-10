@@ -51,7 +51,7 @@ fun_def:
     { {name; code; params=List.fold_left (fun acc a -> match a with
                                                         | Var name -> name::acc
                                                         | _ -> failwith "Invalid parameters" ) [] p 
-    ; locals=decl
+    ; locals=decl; id=instruction_id ()
     } }
 ;
 

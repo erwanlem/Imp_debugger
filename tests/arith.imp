@@ -1,4 +1,4 @@
-function g() {
+/*function g() {
   var g;
   g = 10 + 10;
   return (g);
@@ -8,10 +8,10 @@ function h() {
   var h; 
   h = 30;
   return (h);
-}
+}*/
 
 function f() {
-  return (g() + h());
+  return (10);
 }
 
 
@@ -23,8 +23,7 @@ function main() {
   var k;
   var l;
 
-  t = { f() + g(); g(); f() + 12; };
-  a = f() + g();
+  t = { f(); f() + 12; };
   i = 0;
   j = 1;
   k = 2;

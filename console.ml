@@ -128,6 +128,8 @@ let clear_console () =
 
 
 let print_code prog =
+  Imppp.instr_id := !instr_id;
+  Imppp.find_instr := false;
   let window = get_window () in
   let y, x = Curses.getyx window in
   let begy, begx = Curses.getbegyx window in
