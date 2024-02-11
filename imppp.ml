@@ -13,8 +13,10 @@ let write_out msg =
   (* write something *)
   close_out oc
 
+let n = ref 0
+
 let print_if_find id str =
-  if id = !instr_id then (sprintf "[;;]%s[;;]" str)
+  if id = !instr_id then str
   else str
 
 let bop2string = function
@@ -58,14 +60,14 @@ and print_elts  = function
 let rec print_instr  = function
   | Print (e, id) -> print_if_find id (sprintf  "print(@[%s@]);" (print_expr e))
   | Set(x, e, id) -> print_if_find id (sprintf  "%s = @[%s@];" x (print_expr e))
-  | If(e, s1, s2, id) -> print_if_find id (sprintf  
+  | If(e, s1, s2, id) -> print_if_find id (sprintf
                        "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
                        (print_expr e) (print_seq s1) (print_seq s2))
   | While(e, s, id) -> print_if_find id (sprintf  "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
                      (print_expr e) (print_seq s))
   | Return (e, id) -> print_if_find id (sprintf  "return(@[%s@]);" (print_expr e))
   | Expr (e,id) -> print_if_find id (sprintf  "@[%s@];" (print_expr e))
-  | SetArr(t, i, e, id) -> print_if_find id (sprintf  "%s[%s] = @[%s@];" 
+  | SetArr(t, i, e, id) -> print_if_find id (sprintf  "%s[%s] = @[%s@];"
                          (print_expr t) (print_expr i) (print_expr e))
 and print_seq  = function
   | [] -> sprintf  ""
@@ -79,8 +81,8 @@ let rec print_params  = function
 
 let rec print_vars  = function
   | [] -> sprintf  ""
-  | (x, None)::vars -> sprintf  "@[<v>var %s;@,%s@]" x (print_vars vars)
-  | (x, Some e)::vars -> sprintf  "@[<v>var %s = @[%s@];@,%s@]" 
+  | (x, None, id)::vars -> sprintf  "@[<v>var %s;@,%s@]" x (print_vars vars)
+  | (x, Some e, id)::vars -> sprintf  "@[<v>var %s = @[%s@];@,%s@]" 
                            x (print_expr e) (print_vars vars)
 
 let print_fdef  fdef =

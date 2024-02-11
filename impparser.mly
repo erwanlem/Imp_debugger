@@ -56,7 +56,7 @@ fun_def:
 ;
 
 var_decl:
-  | VAR id=IDENT SEMI { (id, None) }
+  | VAR id=IDENT SEMI { (id, None, instruction_id ()) }
 ;
 
 

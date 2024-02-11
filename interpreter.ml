@@ -33,10 +33,10 @@ let undo_stack = ref []
 
 (* Fonction principale *)
 let exec_prog (p : program): unit =
-  let code = List.fold_right (fun (s, v) acc -> 
+  let code = List.fold_right (fun (s, v, id) acc -> 
     match v with
-    | None -> Set(s, Null, -1) :: acc
-    | Some e -> Set(s, e, -1) :: acc ) p.globals [(Expr(Call("main", []), 0))]
+    | None -> Set(s, Null, id) :: acc
+    | Some e -> Set(s, e, id) :: acc ) p.globals [(Expr(Call("main", []), 0))]
   in
 
   let p_seq = ref code in
@@ -51,10 +51,10 @@ let exec_prog (p : program): unit =
                                     | _       -> Printf.printf "Null%!"); ([], env)
       | Some (f, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        let fun_code = List.fold_right (fun (s, v) acc -> 
+        let fun_code = List.fold_right (fun (s, v, id) acc -> 
           match v with
-          | None -> Set(s, Null, -1) :: acc
-          | Some e -> Set(s, e, -1) :: acc ) f.locals f.code
+          | None -> Set(s, Null, id) :: acc
+          | Some e -> Set(s, e, id) :: acc ) f.locals f.code
         in
         (fun_code @ [Print(e', id)], Env.empty))
     | Set (s, e, id)     ->
@@ -64,10 +64,10 @@ let exec_prog (p : program): unit =
               else ( global_env := Env.add s (eval e env) !global_env; ([], env))
       | Some (f, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        let fun_code = List.fold_right (fun (s, v) acc -> 
+        let fun_code = List.fold_right (fun (s, v, id) acc -> 
           match v with
-          | None -> Set(s, Null, -1) :: acc
-          | Some e -> Set(s, e, -1) :: acc ) f.locals f.code
+          | None -> Set(s, Null, id) :: acc
+          | Some e -> Set(s, e, id) :: acc ) f.locals f.code
         in
         (fun_code @ [Set(s, e', id)], Env.empty) )
 
@@ -77,10 +77,10 @@ let exec_prog (p : program): unit =
         | None -> if evalb e env then (s1, env) else (s2, env)
         | Some (f, e') -> 
           local_env_stack := (env :: !local_env_stack);
-          let fun_code = List.fold_right (fun (s, v) acc -> 
+          let fun_code = List.fold_right (fun (s, v, id) acc -> 
             match v with
-            | None -> Set(s, Null, -1) :: acc
-            | Some e -> Set(s, e, -1) :: acc ) f.locals f.code
+            | None -> Set(s, Null, id) :: acc
+            | Some e -> Set(s, e, id) :: acc ) f.locals f.code
           in
           (fun_code @ [If(e', s1, s2, id)], Env.empty) )
 
@@ -90,10 +90,10 @@ let exec_prog (p : program): unit =
         | None -> if evalb e env then (s @ [While(e, s, id)], env) else ([], env)
         | Some (f, e') -> 
           local_env_stack := (env :: !local_env_stack);
-          let fun_code = List.fold_right (fun (s, v) acc -> 
+          let fun_code = List.fold_right (fun (s, v, id) acc -> 
             match v with
-            | None -> Set(s, Null, -1) :: acc
-            | Some e -> Set(s, e, -1) :: acc ) f.locals f.code
+            | None -> Set(s, Null, id) :: acc
+            | Some e -> Set(s, e, id) :: acc ) f.locals f.code
           in
           (fun_code @ [While(e', s, id)], Env.empty) )
     
@@ -108,10 +108,10 @@ let exec_prog (p : program): unit =
           ([], env) 
       | Some (f, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        let fun_code = List.fold_right (fun (s, v) acc -> 
+        let fun_code = List.fold_right (fun (s, v, id) acc -> 
           match v with
-          | None -> Set(s, Null, -1) :: acc
-          | Some e -> Set(s, e, -1) :: acc ) f.locals f.code
+          | None -> Set(s, Null, id) :: acc
+          | Some e -> Set(s, e, id) :: acc ) f.locals f.code
         in
         (fun_code @ [Return (e', id)], Env.empty) )
 
@@ -126,10 +126,10 @@ let exec_prog (p : program): unit =
         ([], env)
       | Some (f, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        let fun_code = List.fold_right (fun (s, v) acc -> 
+        let fun_code = List.fold_right (fun (s, v, id) acc -> 
           match v with
-          | None -> Set(s, Null, -1) :: acc
-          | Some e -> Set(s, e, -1) :: acc ) f.locals f.code
+          | None -> Set(s, Null, id) :: acc
+          | Some e -> Set(s, e, id) :: acc ) f.locals f.code
         in
         (fun_code, Env.empty) )
 

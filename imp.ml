@@ -55,12 +55,12 @@ type function_def = {
   name:   string;
   id  :   int;
   params: string list;
-  locals: (string * expr option) list;
+  locals: (string * expr option * int) list;
   code:   seq;
 }
 
 type program = {
-  globals:   (string * expr option) list;
+  globals:   (string * expr option * int) list;
   functions: function_def list;
   main: function_def;
 }
