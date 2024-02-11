@@ -30,6 +30,7 @@ type binop = Add | Sub | Mul | Div | Rem
 
 
 type expr =
+  | Null
   | Int    of int
   | Bool   of bool
   | Var    of string

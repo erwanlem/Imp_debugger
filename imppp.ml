@@ -14,7 +14,7 @@ let write_out msg =
   close_out oc
 
 let print_if_find id str =
-  if id = !instr_id then (write_out (Printf.sprintf "[;;]%s[;;]" str); sprintf "[;;]%s[;;]" str)
+  if id = !instr_id then (sprintf "[;;]%s[;;]" str)
   else str
 
 let bop2string = function

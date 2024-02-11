@@ -68,7 +68,7 @@ let close_console () : unit =
 
 
 
-let print_env env =
+let print_env env env_global =
   let window = get_window () in
   let y, x = Curses.getyx window in
   let h, w = Curses.get_size () in
@@ -84,6 +84,12 @@ let print_env env =
   | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a ^ "]"
   | Null     -> Printf.sprintf "Null"
   in
+  (Env.iter (
+    fun s v ->
+      let out = s ^ ": " ^ (print_value v) ^ "\n" in
+      let _err = Curses.addstr out in ()
+      
+      ) env_global);
   Env.iter (
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
