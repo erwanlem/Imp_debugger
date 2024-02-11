@@ -16,7 +16,7 @@ let write_out msg =
 let n = ref 0
 
 let print_if_find id str =
-  if id = !instr_id then str
+  if id = !instr_id then "%" ^ str ^ "%"
   else str
 
 let bop2string = function
@@ -81,9 +81,9 @@ let rec print_params  = function
 
 let rec print_vars  = function
   | [] -> sprintf  ""
-  | (x, None, id)::vars -> sprintf  "@[<v>var %s;@,%s@]" x (print_vars vars)
-  | (x, Some e, id)::vars -> sprintf  "@[<v>var %s = @[%s@];@,%s@]" 
-                           x (print_expr e) (print_vars vars)
+  | (x, None, id)::vars -> print_if_find id (sprintf  "@[<v>var %s;@,%s@]" x (print_vars vars))
+  | (x, Some e, id)::vars -> print_if_find id (sprintf  "@[<v>var %s = @[%s@];@,%s@]" 
+                           x (print_expr e) (print_vars vars) )
 
 let print_fdef  fdef =
   print_if_find fdef.id (sprintf  "@[<v>@[<v 2>function %s(@[%s@]) {@,%s@,%s@]@,}@,@]" 
