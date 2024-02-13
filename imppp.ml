@@ -13,10 +13,12 @@ let write_out msg =
   (* write something *)
   close_out oc
 
+type stag += RGB of {r:int;g:int;b:int}
+
 let n = ref 0
 
 let print_if_find id str =
-  if id = !instr_id then "%" ^ str ^ "%"
+  if id = !instr_id then open_stag (RGB {r=0;g=0;b=0}); str; close_stag ();
   else str
 
 let bop2string = function

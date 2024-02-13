@@ -148,7 +148,7 @@ let exec_prog (p : program): unit =
                                 if find <> None then let p', r = call_in_param ll find in (e :: p', r)
                                 else
                                   match find_call e env with
-                                  | None -> call_in_param ll find
+                                  | None -> let p', r = call_in_param ll find in (e :: p', r)
                                   | Some (f, p, c) ->
                                     let p', r = call_in_param ll (Some (f, p, c)) in
                                     (Continuation :: p', r)

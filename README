@@ -1,14 +1,18 @@
-Compilation :
-  dune build
+# Débogueur pour le langage Imp
 
-Exécution :
-  ./impcat.exe tests/min.imp
 
-Nettoyage :
-  dune clean
 
-Répertoire des produits de compilation
-  _build/default/
-En particulier, fichiers d'analyse de menhir :
-  _build/default/impparser.automaton
-  _build/default/impparser.conflicts
+
+> Compilation :
+>   dune build
+>
+> Exécution :
+>   ./impcat.exe tests/min.imp
+>
+> Nettoyage :
+>   dune clean
+
+
+
+## Documentation:
+https://hal.science/hal-01503081/file/format-unraveled.pdf
