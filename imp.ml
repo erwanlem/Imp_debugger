@@ -5,7 +5,7 @@ type value =
   | VInt  of int
   | VBool of bool
   | VArray of value array
-  | Null
+  | VNull
 
 
 let string_of_value v =

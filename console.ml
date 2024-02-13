@@ -82,7 +82,7 @@ let print_env env env_global =
   | VBool b  -> Printf.sprintf "%b" b
   | VInt  i  -> Printf.sprintf "%d" i
   | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a ^ "]"
-  | Null     -> Printf.sprintf "Null"
+  | VNull     -> Printf.sprintf "Null"
   in
   (Env.iter (
     fun s v ->

@@ -1,4 +1,4 @@
-var x;
+var x = 1;
 var y;
 
 /*function g() {
@@ -13,25 +13,21 @@ function h() {
   return (h);
 }*/
 
-function f() {
-  return (10);
+function f(var i) {
+  return (0);
 }
 
 
 function main() {
-  var t;
-  var i;
+  var t = { f(1); f(1) + 12; };
+  var i = 0;
   var a;
-  var j;
-  var k;
+  var j = 1;
+  var k = 2;
   var l;
 
   x = 10;
 
-  t = { f(); f() + 12; };
-  i = 0;
-  j = 1;
-  k = 2;
   l = 3;
-  i = f();
+  i = f(1);
 }

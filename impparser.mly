@@ -46,17 +46,19 @@ program:
 ;
 
 fun_def:
-| FUNCTION name=IDENT LPAR p=separated_list(COMMA, expr) RPAR
+| FUNCTION name=IDENT LPAR param=separated_list(COMMA, simple_var_decl) RPAR
     BEGIN decl=list(var_decl) code=list(instr) END
-    { {name; code; params=List.fold_left (fun acc a -> match a with
-                                                        | Var name -> name::acc
-                                                        | _ -> failwith "Invalid parameters" ) [] p 
-    ; locals=decl; id=instruction_id ()
-    } }
+    { {name; code; params=List.fold_left (fun acc (id, _, _) -> id :: acc) [] param; 
+    locals=decl; id=instruction_id ()} }
 ;
 
 var_decl:
-  | VAR id=IDENT SEMI { (id, None, instruction_id ()) }
+  | s=simple_var_decl SEMI { s }
+  | VAR id=IDENT EQUAL e=expr SEMI { (id, Some e, instruction_id ()) }
+;
+
+simple_var_decl:
+  | VAR id=IDENT { (id, None, instruction_id ()) }
 ;
 
 
