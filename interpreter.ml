@@ -53,7 +53,7 @@ let exec_prog (p : program): unit =
                                     | _       -> Printf.printf "Null%!"); ([], env)
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p [Print(e', id)] )
+        call_fun f p [Print(e', id)] env )
 
     | Set (s, e, id)     ->
       Console.instr_id := id;
@@ -62,7 +62,7 @@ let exec_prog (p : program): unit =
               else ( global_env := Env.add s (eval e env) !global_env; ([], env))
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p [Set(s, e', id)] )
+        call_fun f p [Set(s, e', id)] env )
 
     | If (e, s1, s2, id) ->
       Console.instr_id := id;
@@ -70,7 +70,7 @@ let exec_prog (p : program): unit =
         | None -> if evalb e env then (s1, env) else (s2, env)
         | Some (f, p, e') -> 
           local_env_stack := (env :: !local_env_stack);
-          call_fun f p [If(e', s1, s2, id)] )
+          call_fun f p [If(e', s1, s2, id)] env )
 
     | While (e, s, id)   ->
       Console.instr_id := id;
@@ -78,7 +78,7 @@ let exec_prog (p : program): unit =
         | None -> if evalb e env then (s @ [While(e, s, id)], env) else ([], env)
         | Some (f, p, e') -> 
           local_env_stack := (env :: !local_env_stack);
-          call_fun f p [While(e', s, id)] )
+          call_fun f p [While(e', s, id)] env )
     
     | Return (e, id)       ->
       Console.instr_id := id;
@@ -91,7 +91,7 @@ let exec_prog (p : program): unit =
           ([], env) 
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p [Return (e', id)] )
+        call_fun f p [Return (e', id)] env)
 
     | Expr (e, id)         -> 
       Console.instr_id := id; 
@@ -104,7 +104,7 @@ let exec_prog (p : program): unit =
         ([], env)
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p []
+        call_fun f p [] env
       )
 
 
@@ -128,20 +128,36 @@ let exec_prog (p : program): unit =
     | VArray a -> a
     | _ -> assert false
 
-  and call_fun f param next_instr =
-    let env = List.fold_left2 (fun acc a b -> Env.add a (eval b Env.empty) acc) Env.empty f.params param in
+  and call_fun f param next_instr env =
+    let call_env = List.fold_left2 (fun acc a b -> Env.add a (eval b env) acc) Env.empty f.params param in
     let fun_code = List.fold_right (fun (s, v, id) acc ->
       match v with
       | None -> Set(s, Null, id) :: acc
       | Some e -> Set(s, e, id) :: acc ) f.locals f.code
     in
-    (fun_code @ next_instr, env)
+    (fun_code @ next_instr, call_env)
 
 
   and find_call e env =
     match e with
     | Call (s, l)         -> let f = List.find (fun f -> f.name = s) p.functions in
-                            Some (f, l, Continuation)
+                             let rec call_in_param p find =
+                              (match p with
+                              | [] -> ([], find)
+                              | e :: ll ->
+                                if find <> None then let p', r = call_in_param ll find in (e :: p', r)
+                                else
+                                  match find_call e env with
+                                  | None -> call_in_param ll find
+                                  | Some (f, p, c) ->
+                                    let p', r = call_in_param ll (Some (f, p, c)) in
+                                    (Continuation :: p', r)
+                              ) in
+                            (match call_in_param l None with
+                            | p', None -> Some (f, l, Continuation)
+                            | p', Some (f, p, c) -> Some (f, p, Call(s, p')) )
+
+
     | Unop (op, e)       -> (match find_call e env with None -> None | Some (f, p, c) -> Some (f, p, Unop (op, c)) )
     | Binop (op, e1, e2) -> (match find_call e1 env, find_call e2 env with
                               | None, None -> None
@@ -175,7 +191,11 @@ let exec_prog (p : program): unit =
     match e with
     | Int i               -> VInt i
     | Bool b              -> VBool b
-    | Var string          -> Env.find string env
+    | Var string          -> (try Env.find string env 
+                              with Not_found -> 
+                                Console.write_out (Printf.sprintf "Variable %s not found" string); 
+                                Console.close_console (); 
+                                exit 0)
     | Unop (Not, e)       -> VBool (not (evalb e env))
     | Unop (Opp, e)       -> VInt (- (evali e env))
     | Binop (Add, e1, e2) -> VInt(evali e1 env + evali e2 env)

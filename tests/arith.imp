@@ -13,13 +13,25 @@ function h() {
   return (h);
 }*/
 
-function f(var i) {
-  return (0);
+function m() {
+  return (5);
+}
+
+function n() {
+  return (1000);
+}
+
+function f(var i, var j) {
+  if (i==0) {
+    return (0);
+  } else {
+    return (f(i-1));
+  }
 }
 
 
 function main() {
-  var t = { f(1); f(1) + 12; };
+  /*var t = { f(1); f(1) + 12; };
   var i = 0;
   var a;
   var j = 1;
@@ -28,6 +40,6 @@ function main() {
 
   x = 10;
 
-  l = 3;
-  i = f(1);
+  l = 3;*/
+  i = f(m(), n());
 }
