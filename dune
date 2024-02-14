@@ -1,0 +1,4 @@
+(executable
+ (name entry)
+ (promote (until-clean))
+ (libraries curses))
