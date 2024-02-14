@@ -13,12 +13,20 @@ let write_out msg =
   (* write something *)
   close_out oc
 
-type stag += RGB of {r:int;g:int;b:int}
 
-let n = ref 0
+
+let tags_funs =
+  {
+    mark_open_stag = (fun s -> match s with String_tag s -> ("<" ^ s ^ ">") | _ -> "");
+    mark_close_stag = (fun s -> match s with String_tag s -> ("</" ^ s ^ ">") | _ -> "");
+    print_open_stag = (fun _ -> ());
+    print_close_stag = (fun _ -> ())
+  }
+
+
 
 let print_if_find id str =
-  if id = !instr_id then open_stag (RGB {r=0;g=0;b=0}); str; close_stag ();
+  if id = !instr_id then sprintf "@{<color>%s@}" str
   else str
 
 let bop2string = function
@@ -96,4 +104,7 @@ let rec print_functions  = function
   | fdef::functions -> sprintf  "@[<v>%s@,%s@]" (print_fdef fdef) (print_functions functions)
 
 let print_program p =
-  sprintf  "@[<v>%s@,%s@]@." (print_vars p.globals) (print_functions p.functions)
+  pp_set_tags str_formatter true;
+  pp_set_formatter_stag_functions str_formatter tags_funs;
+  fprintf str_formatter "@[<v>%s@,%s@]@." (print_vars p.globals) (print_functions p.functions);
+  flush_str_formatter ()

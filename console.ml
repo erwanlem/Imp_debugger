@@ -141,14 +141,11 @@ let print_code prog =
   let begy, begx = Curses.getbegyx window in
   let _err = Curses.move (begy+10) begx in
   let code = Printf.sprintf "%s" (Imppp.print_program prog) in
-  let current_instr = List.nth (String.split_on_char '%' code) 1 in
-  let code = List.nth (String.split_on_char '%' code) 2 in
-  let _err = Curses.start_color () in
+  (*let _err = Curses.start_color () in
   let _err = Curses.init_pair 1 Curses.Color.green Curses.Color.green in
   Curses.attron (Curses.color_pairs ());
-  let _err = Curses.addstr (current_instr) in
   Curses.attr_off (Curses.color_pairs ());
-  let _err = Curses.use_default_colors () in
+  let _err = Curses.use_default_colors () in*)
 
   let _err = Curses.addstr (code) in
   let _err = Curses.move y x in ()

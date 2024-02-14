@@ -21,11 +21,11 @@ function n() {
   return (1000);
 }
 
-function f(var i, var j) {
+function f(var i) {
   if (i==0) {
     return (0);
   } else {
-    return (f(i-1, j));
+    return (f(i-1));
   }
 }
 
@@ -41,5 +41,5 @@ function main() {
   x = 10;
 
   l = 3;*/
-  i = f(m(), 0);
+  i = f(m());
 }
