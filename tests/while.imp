@@ -1,9 +1,0 @@
-function main() {
-  var x = 1;
-  var y = 10;
-  var z = 0;
-  while (x < y) {
-    y = y-x;
-    z = z+1;
-  }
-}

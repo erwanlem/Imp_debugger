@@ -1,6 +1,0 @@
-var x = 2;
-var y = 3*x;
-
-function main() {
-  print(48 + x);
-}

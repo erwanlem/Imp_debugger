@@ -1,9 +1,0 @@
-var x;
-var y;
-
-function main() {
-  x = 2;
-  y = 3;
-  x = x*y;
-  print(48 + x);
-}
