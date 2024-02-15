@@ -194,10 +194,10 @@ let print_code prog =
   let p1, p2, t = get_str_parts code in
   ignore (Curses.addstr (p1));
   let _err = Curses.start_color () in
-  let _err = Curses.init_pair 1 Curses.Color.green Curses.Color.green in
-  Curses.attron (Curses.color_pairs ());
+  let _err = Curses.init_pair 1 Curses.Color.black Curses.Color.green in
+  Curses.attron (Curses.A.color_pair 1);
   ignore (Curses.addstr (t));
-  Curses.attr_off (Curses.color_pairs ());
+  Curses.attr_off (Curses.A.color_pair 1);
   let _err = Curses.use_default_colors () in
   ignore (Curses.addstr (p2))
   with NoColorTag -> ignore (Curses.addstr (code)) );
