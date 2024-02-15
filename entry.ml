@@ -18,19 +18,19 @@ let () =
 
 
 let w = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-Fusce sem quam, dapibus ut lacus ac, tincidunt iaculis turpis. Vestibulum
- convallis aliquam posuere. <color></color> ligula sapien, 
- id facilisis ligula efficitur sed. Duis facilisis leo ac metus vestibulum, non congue arcu."
+Fusce sem quam, dapibus ut lacus ac, tincidunt iaculis turpis. Vestibulum convallis aliquam posuere. dd
+<color> ligula
+ sapien </color>, id facilisis ligula efficitur sed. Duis facilisis leo ac metus vestibulum, non congue arcu."
 
 
 let tag_name = "color"
 
 
-let newline = {|<color>(.\|\\n)*</color>|}
+let newline = "<color>\\(.\\|[\n]\\)*</color>"
 let reg0 = Str.regexp newline
-let reg = Str.regexp ("<" ^ tag_name ^ ">"^ newline ^"<\\\\/" ^ tag_name ^ ">")
+let reg = Str.regexp ("<color>\\(.\\|[\n]\\)*</color>")
 let open_reg = Str.regexp ("<" ^ tag_name ^ ">")
-let close_reg = Str.regexp ("<\\/" ^ tag_name ^ ">")
+let close_reg = Str.regexp ("</" ^ tag_name ^ ">")
 
 let get_color_tag s =
   try 
