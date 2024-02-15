@@ -129,7 +129,7 @@ let exec_prog (p : program): unit =
     | _ -> assert false
 
   and call_fun f param next_instr env =
-    let call_env = List.fold_left2 (fun acc a b -> Env.add a (eval b env) acc) Env.empty f.params param in
+    let call_env = List.fold_right2 (fun a b acc -> Env.add a (eval b env) acc) f.params param Env.empty in
     let fun_code = List.fold_right (fun (s, v, id) acc ->
       match v with
       | None -> Set(s, Null, id) :: acc

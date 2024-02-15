@@ -26,7 +26,7 @@ let tags_funs =
 
 
 let print_if_find id str =
-  if id = !instr_id then sprintf "@{<color>%s@}" str
+  if id = !instr_id then (fprintf str_formatter "@{<color>%s@}" str; flush_str_formatter () )
   else str
 
 let bop2string = function
@@ -68,40 +68,51 @@ and print_elts  = function
   | e::elts -> sprintf  "%s;@ %s" (print_expr e) (print_elts elts)
 
 let rec print_instr  = function
-  | Print (e, id) -> print_if_find id (sprintf  "print(@[%s@]);" (print_expr e))
-  | Set(x, e, id) -> print_if_find id (sprintf  "%s = @[%s@];" x (print_expr e))
-  | If(e, s1, s2, id) -> print_if_find id (sprintf
+  | Print (e, id) -> (fprintf str_formatter "print(@[%s@]);" (print_expr e));
+                    print_if_find id (flush_str_formatter ())
+  | Set(x, e, id) -> (fprintf str_formatter "%s = @[%s@];" x (print_expr e));
+                    print_if_find id (flush_str_formatter ())
+  | If(e, s1, s2, id) -> (fprintf str_formatter
                        "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
-                       (print_expr e) (print_seq s1) (print_seq s2))
-  | While(e, s, id) -> print_if_find id (sprintf  "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
-                     (print_expr e) (print_seq s))
-  | Return (e, id) -> print_if_find id (sprintf  "return(@[%s@]);" (print_expr e))
-  | Expr (e,id) -> print_if_find id (sprintf  "@[%s@];" (print_expr e))
-  | SetArr(t, i, e, id) -> print_if_find id (sprintf  "%s[%s] = @[%s@];"
-                         (print_expr t) (print_expr i) (print_expr e))
+                       (print_expr e) (print_seq s1) (print_seq s2));
+                       print_if_find id (flush_str_formatter ())
+  | While(e, s, id) -> (fprintf str_formatter "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
+                     (print_expr e) (print_seq s));
+                     print_if_find id (flush_str_formatter ())
+  | Return (e, id) -> (fprintf str_formatter "return(@[%s@]);" (print_expr e));
+                      print_if_find id (flush_str_formatter ())
+  | Expr (e,id) -> (fprintf str_formatter "@[%s@];" (print_expr e));
+                      print_if_find id (flush_str_formatter ())
+  | SetArr(t, i, e, id) -> (fprintf str_formatter "%s[%s] = @[%s@];"
+                         (print_expr t) (print_expr i) (print_expr e));
+                         print_if_find id (flush_str_formatter ())
 and print_seq  = function
-  | [] -> sprintf  ""
-  | [i] -> sprintf  "%s" (print_instr i)
-  | i::seq -> sprintf  "@[<v>%s@,%s@]" (print_instr i) (print_seq seq)
+  | [] -> fprintf str_formatter ""; flush_str_formatter ()
+  | [i] -> fprintf str_formatter "%s" (print_instr i); flush_str_formatter ()
+  | i::seq -> fprintf str_formatter "@[<v>%s@,%s@]" (print_instr i) (print_seq seq);
+              flush_str_formatter ()
 
 let rec print_params  = function
-  | [] -> sprintf  ""
-  | [x] -> sprintf  "%s" x
-  | x::params -> sprintf  "%s,@ %s" x (print_params params)
+  | [] -> fprintf str_formatter ""; flush_str_formatter ()
+  | [x] -> fprintf str_formatter "%s" x; flush_str_formatter ()
+  | x::params -> fprintf str_formatter "%s,@ %s" x (print_params params); flush_str_formatter ()
 
 let rec print_vars  = function
-  | [] -> sprintf  ""
-  | (x, None, id)::vars -> print_if_find id (sprintf  "@[<v>var %s;@,%s@]" x (print_vars vars))
-  | (x, Some e, id)::vars -> print_if_find id (sprintf  "@[<v>var %s = @[%s@];@,%s@]" 
-                           x (print_expr e) (print_vars vars) )
+  | [] -> fprintf str_formatter ""; flush_str_formatter ()
+  | (x, None, id)::vars -> (fprintf str_formatter "@[<v>var %s;@,%s@]" x (print_vars vars)); 
+                            flush_str_formatter ()
+  | (x, Some e, id)::vars -> (fprintf str_formatter "@[<v>var %s = @[%s@];@,%s@]" 
+                           x (print_expr e) (print_vars vars) ); flush_str_formatter ()
 
 let print_fdef  fdef =
-  print_if_find fdef.id (sprintf  "@[<v>@[<v 2>function %s(@[%s@]) {@,%s@,%s@]@,}@,@]" 
-    fdef.name (print_params fdef.params) (print_vars fdef.locals) (print_seq fdef.code))
+  (fprintf str_formatter "@[<v>@[<v 2>function %s(@[%s@]) {@,%s@,%s@]@,}@,@]" 
+    fdef.name (print_params fdef.params) (print_vars fdef.locals) (print_seq fdef.code));
+    flush_str_formatter ()
 
 let rec print_functions  = function
-  | [] -> sprintf  ""
-  | fdef::functions -> sprintf  "@[<v>%s@,%s@]" (print_fdef fdef) (print_functions functions)
+  | [] -> fprintf str_formatter ""; flush_str_formatter ()
+  | fdef::functions -> fprintf str_formatter "@[<v>%s@,%s@]" (print_fdef fdef) (print_functions functions); 
+                      flush_str_formatter ()
 
 let print_program p =
   pp_set_tags str_formatter true;

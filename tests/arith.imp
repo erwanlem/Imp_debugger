@@ -17,15 +17,11 @@ function m() {
   return (5);
 }
 
-function n() {
-  return (1000);
-}
-
-function f(var i) {
+function f(var i, var j) {
   if (i==0) {
     return (0);
   } else {
-    return (f(i-1));
+    return (f(i-1, j));
   }
 }
 
@@ -41,5 +37,5 @@ function main() {
   x = 10;
 
   l = 3;*/
-  i = f(m());
+  i = f(m(), 5);
 }
