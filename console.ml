@@ -12,6 +12,55 @@ let get_window () =
   | Some w -> w
   | None   -> failwith "Uninitialized window"
 
+
+
+
+(********************************************
+    
+      Tag detection for code string
+
+*********************************************)
+
+exception NoColorTag
+
+let tag_name = "color"
+
+let reg = Str.regexp ("<" ^ tag_name ^ ">(.|\\\\R)*<\\/" ^ tag_name ^ ">")
+let open_reg = Str.regexp ("<" ^ tag_name ^ ">")
+let close_reg = Str.regexp ("<\\/" ^ tag_name ^ ">")
+
+
+let get_color_tag s =
+  try 
+    ignore (Str.search_forward reg s 0);
+    (let s = Str.matched_string s in
+    let b = Str.match_beginning () in
+    let e = Str.match_end () in
+    let s' = Str.global_replace open_reg "" s in
+    (b, e, (Str.global_replace close_reg "" s')))
+  with Not_found -> raise NoColorTag
+
+
+(* Returns string
+    (before color tag, after color tag , color tag) 
+*)
+let get_str_parts str =
+  let b, e, t = get_color_tag str in
+  let part1 = String.sub str 0 b in
+  let part2 = String.sub str e (String.length str-e) in
+  (part1, part2, t)
+
+
+(*******************************************************)
+(*******************************************************)
+(*******************************************************)
+
+
+
+
+
+
+
 let rec match_key match_entry =
   let window = get_window () in
   let _err = Curses.noecho () in
@@ -140,14 +189,18 @@ let print_code prog =
   let y, x = Curses.getyx window in
   let begy, begx = Curses.getbegyx window in
   let _err = Curses.move (begy+10) begx in
-  let code = Printf.sprintf "%s" (Imppp.print_program prog) in
-  (*let _err = Curses.start_color () in
+  let code = Format.sprintf "%s" (Imppp.print_program prog) in
+  (try 
+  let p1, p2, t = get_str_parts code in
+  ignore (Curses.addstr (p1));
+  let _err = Curses.start_color () in
   let _err = Curses.init_pair 1 Curses.Color.green Curses.Color.green in
   Curses.attron (Curses.color_pairs ());
+  ignore (Curses.addstr (t));
   Curses.attr_off (Curses.color_pairs ());
-  let _err = Curses.use_default_colors () in*)
-
-  let _err = Curses.addstr (code) in
+  let _err = Curses.use_default_colors () in
+  ignore (Curses.addstr (p2))
+  with NoColorTag -> ignore (Curses.addstr (code)) );
   let _err = Curses.move y x in ()
 
 
