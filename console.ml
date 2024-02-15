@@ -25,9 +25,9 @@ exception NoColorTag
 
 let tag_name = "color"
 
-let reg = Str.regexp ("<" ^ tag_name ^ ">(.|\\\\R)*<\\/" ^ tag_name ^ ">")
+let reg = Str.regexp ("<color>\\(.\\|[\n]\\)*</color>")
 let open_reg = Str.regexp ("<" ^ tag_name ^ ">")
-let close_reg = Str.regexp ("<\\/" ^ tag_name ^ ">")
+let close_reg = Str.regexp ("</" ^ tag_name ^ ">")
 
 
 let get_color_tag s =
