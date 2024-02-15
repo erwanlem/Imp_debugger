@@ -17,18 +17,20 @@ let () =
   fprintf str_formatter "@{<color>Hello World !@} @."
 
 
-let w = {| Lorem ipsum dolor sit amet, consectetur adipiscing elit.
- Vivamus vitae erat tempor, tincidunt orci ultrices, facilisis turpis. 
- Nullam lorem est, sodales eu elementum nec, dapibus eu lectus. Pellentesque 
- at ex porta, blandit purus sed, <color>sollicitudin est</color>. Nam molestie ultricies magna. |}
+let w = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+Fusce sem quam, dapibus ut lacus ac, tincidunt iaculis turpis. Vestibulum
+ convallis aliquam posuere. <color></color> ligula sapien, 
+ id facilisis ligula efficitur sed. Duis facilisis leo ac metus vestibulum, non congue arcu."
 
 
 let tag_name = "color"
 
-let reg = Str.regexp ("<" ^ tag_name ^ ">.*<\\/" ^ tag_name ^ ">")
+
+let newline = {|<color>(.\|\\n)*</color>|}
+let reg0 = Str.regexp newline
+let reg = Str.regexp ("<" ^ tag_name ^ ">"^ newline ^"<\\\\/" ^ tag_name ^ ">")
 let open_reg = Str.regexp ("<" ^ tag_name ^ ">")
 let close_reg = Str.regexp ("<\\/" ^ tag_name ^ ">")
-
 
 let get_color_tag s =
   try 
@@ -40,6 +42,10 @@ let get_color_tag s =
     (b, e, (Str.global_replace close_reg "" s')))
   with Not_found -> raise NoColorTag
 
+let () = Printf.printf "%s\n%!" w
+
+
+let () = Printf.printf "%d\n%!" (Str.search_forward reg0 w 0)
 
 (* Returns string
    (before color tag, after color tag , color tag) 
@@ -53,4 +59,4 @@ let get_str_parts str =
 let p1, p2, tg = get_str_parts w
 let () = Printf.printf "%s\n\n%!" p1
 let () = Printf.printf "%s\n\n%!" p2
-let () = Printf.printf "%s\n\n%!" tg
+let () = Printf.printf "Tag = %s\n\n%!" tg
