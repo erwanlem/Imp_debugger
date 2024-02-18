@@ -62,7 +62,7 @@ let rec print_expr  = function
 and print_args  = function
   | [] -> sprintf  ""
   | [a] -> sprintf  "%s" (print_expr a)
-  | a::args -> sprintf  "%s,@ %s" (print_expr a) (print_args args)
+  | a::args -> sprintf  "%s, %s" (print_expr a) (print_args args)
 and print_elts  = function
   | [] -> sprintf  ""
   | e::elts -> sprintf  "%s;@ %s" (print_expr e) (print_elts elts)
@@ -74,11 +74,11 @@ let rec print_instr  = function
                     print_if_find id (flush_str_formatter ())
   | If(e, s1, s2, id) -> if id = !instr_id then 
                           (fprintf str_formatter
-                          "@[<v>@[<v 2>@{<color>if (@[%s@])@} {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
+                          "@[<v>@[<v 4>@{<color>if (@[%s@])@} {@,%s@]@,@[<v 2>@ } else {%s@]@,}@]" 
                           (print_expr e) (print_seq s1) (print_seq s2))
                         else
                           (fprintf str_formatter
-                          "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
+                          "@[<v>@[<v 4>if (@[%s@]) {@ %s@]@,@[<v 2>@ } else {%s@]@,}@]" 
                           (print_expr e) (print_seq s1) (print_seq s2));
                         flush_str_formatter ()
   | While(e, s, id) -> (fprintf str_formatter "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
@@ -100,7 +100,7 @@ and print_seq  = function
 let rec print_params  = function
   | [] -> fprintf str_formatter ""; flush_str_formatter ()
   | [x] -> fprintf str_formatter "%s" x; flush_str_formatter ()
-  | x::params -> fprintf str_formatter "%s,@ %s" x (print_params params); flush_str_formatter ()
+  | x::params -> fprintf str_formatter "%s, %s" x (print_params params); flush_str_formatter ()
 
 let rec print_vars  = function
   | [] -> fprintf str_formatter ""; flush_str_formatter ()

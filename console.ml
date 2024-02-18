@@ -199,7 +199,8 @@ let print_code prog =
   ignore (Curses.addstr (t));
   Curses.attr_off (Curses.A.color_pair 1);
   let _err = Curses.use_default_colors () in
-  ignore (Curses.addstr (p2))
+  ignore (Curses.addstr (p2));
+  Imppp.write_out (p1 ^ t ^ p2)
   with NoColorTag -> ignore (Curses.addstr (code)) );
   let _err = Curses.move y x in ()
 

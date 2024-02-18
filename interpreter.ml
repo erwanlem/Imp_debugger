@@ -129,7 +129,7 @@ let exec_prog (p : program): unit =
     | _ -> assert false
 
   and call_fun f param next_instr env =
-    let call_env = List.fold_right2 (fun a b acc -> Env.add a (eval b env) acc) f.params param Env.empty in
+    let call_env = List.fold_left2 (fun acc a b -> Env.add a (eval b env) acc) Env.empty (List.rev f.params) param in
     let fun_code = List.fold_right (fun (s, v, id) acc ->
       match v with
       | None -> Set(s, Null, id) :: acc
@@ -138,9 +138,12 @@ let exec_prog (p : program): unit =
     (fun_code @ next_instr, call_env)
 
 
+    (* Renvoie la fonction à appliquer, les paramètres de l'appel et 
+       l'instruction à appliquer à la fin de l'appel *)
   and find_call e env =
     match e with
     | Call (s, l)         -> let f = List.find (fun f -> f.name = s) p.functions in
+                              (* Récupère les appels dans les paramètres de l'appel *)
                              let rec call_in_param p find =
                               (match p with
                               | [] -> ([], find)
@@ -154,7 +157,7 @@ let exec_prog (p : program): unit =
                                     (Continuation :: p', r)
                               ) in
                             (match call_in_param l None with
-                            | p', None -> Some (f, l, Continuation)
+                            | p', None -> Some (f, p', Continuation) (* Pas d'appel dans les paramètres *)
                             | p', Some (f, p, c) -> Some (f, p, Call(s, p')) )
 
 
@@ -263,9 +266,6 @@ let exec_prog (p : program): unit =
       | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !local_env_stack, !tmp) :: !undo_stack;
                         
-                        let pr_list = List.fold_left (fun acc e -> acc ^ (string_of_value e ^ "; ")) "" !tmp in
-                        Console.write_out (pr_list);
-
                         let p', env' = step (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
@@ -279,7 +279,6 @@ let exec_prog (p : program): unit =
                        undo_stack := List.tl !undo_stack;
                         p_seq := p'; env := env'; tmp := ret;
                         local_env_stack := stack;
-                        Console.write_out (string_of_int (List.length !p_seq));
                         true)
                       else true
 
