@@ -72,10 +72,15 @@ let rec print_instr  = function
                     print_if_find id (flush_str_formatter ())
   | Set(x, e, id) -> (fprintf str_formatter "%s = @[%s@];" x (print_expr e));
                     print_if_find id (flush_str_formatter ())
-  | If(e, s1, s2, id) -> (fprintf str_formatter
-                       "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
-                       (print_expr e) (print_seq s1) (print_seq s2));
-                       print_if_find id (flush_str_formatter ())
+  | If(e, s1, s2, id) -> if id = !instr_id then 
+                          (fprintf str_formatter
+                          "@[<v>@[<v 2>@{<color>if (@[%s@])@} {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
+                          (print_expr e) (print_seq s1) (print_seq s2))
+                        else
+                          (fprintf str_formatter
+                          "@[<v>@[<v 2>if (@[%s@]) {@,%s@]@,@[<v 2>} else {@,%s@]@,}@]" 
+                          (print_expr e) (print_seq s1) (print_seq s2));
+                        flush_str_formatter ()
   | While(e, s, id) -> (fprintf str_formatter "@[<v>@[<v 2>while (@[%s@]) {@,%s@]@,}@]"
                      (print_expr e) (print_seq s));
                      print_if_find id (flush_str_formatter ())
