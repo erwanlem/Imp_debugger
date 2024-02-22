@@ -33,15 +33,11 @@ function f(var i, var j, var k) {
 
 
 function main() {
-  /*var t = { f(1); f(1) + 12; };
-  var i = 0;
-  var a;
-  var j = 1;
-  var k = 2;
+  /*var t = { f(1); f(1) + 12; };*/
   var l;
 
   x = 10;
 
-  l = 3;*/
+  l = 3;
   i = f(m(), 5, 6);
 }

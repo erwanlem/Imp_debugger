@@ -189,7 +189,7 @@ let print_code prog =
   let y, x = Curses.getyx window in
   let begy, begx = Curses.getbegyx window in
   let _err = Curses.move (begy+10) begx in
-  let code = Format.sprintf "%s" (Imppp.print_program prog) in
+  let code = Format.sprintf "%s" (Imppp.print_program Format.str_formatter prog) in
   (try 
   let p1, p2, t = get_str_parts code in
   ignore (Curses.addstr (p1));
@@ -200,8 +200,8 @@ let print_code prog =
   Curses.attr_off (Curses.A.color_pair 1);
   let _err = Curses.use_default_colors () in
   ignore (Curses.addstr (p2));
-  Imppp.write_out (p1 ^ t ^ p2)
-  with NoColorTag -> ignore (Curses.addstr (code)) );
+  Imppp.write_out (code)
+  with NoColorTag -> (ignore (Curses.addstr (code)); Imppp.write_out code) );
   let _err = Curses.move y x in ()
 
 
