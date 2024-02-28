@@ -85,12 +85,6 @@ let rec match_key match_entry =
       if input = Curses.Key.right then
         if not (match_entry "next" ()) then () else match_key match_entry
     else
-      if input = Curses.Key.up then
-        let _err = Curses.addch (int_of_char 'U') in match_key match_entry
-    else
-      if input = Curses.Key.down then
-        let _err = Curses.addch (int_of_char 'D') in match_key match_entry
-    else
       if input = Curses.Key.backspace then
         (let y, x = Curses.getyx window in
         let _err = Curses.mvdelch y (x-1) in
@@ -192,7 +186,7 @@ let print_code prog =
   let code = Format.sprintf "%s" (Imppp.print_program Format.str_formatter prog) in
   (try 
   let p1, p2, t = get_str_parts code in
-  ignore (Curses.addstr (p1));
+  (*ignore (Curses.addstr (p1));*)
   let _err = Curses.start_color () in
   let _err = Curses.init_pair 1 Curses.Color.black Curses.Color.green in
   Curses.attron (Curses.A.color_pair 1);

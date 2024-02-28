@@ -30,7 +30,6 @@ let undo_stack = ref []
 *)
 
 
-
 (* Fonction principale *)
 let exec_prog (p : program): unit =
   let f_main = List.find (fun e -> e.name = "main") p.functions in
@@ -247,10 +246,11 @@ let exec_prog (p : program): unit =
 
   (* fonction retour arrière *)
   let step_back prev seq env =
-    let instr, env', stack, ret = prev in
+    let instr, env', stack, ret, id_instr = prev in
     ignore (Console.clear_console ());
     Console.print_env env' !global_env;
     Console.print_code p;
+    Console.instr_id := id_instr;
     (instr, env', stack, ret)
   
   in
@@ -264,7 +264,7 @@ let exec_prog (p : program): unit =
 
 
       | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
-                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp) :: !undo_stack;
+                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Console.instr_id) :: !undo_stack;
                         
                         let p', env' = step (!p_seq) (!env) in
                         p_seq := p';
