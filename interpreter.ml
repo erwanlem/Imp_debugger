@@ -58,7 +58,7 @@ let exec_prog (p : program): unit =
       Console.instr_id := id;
       (match find_call e env with
       | None -> if Env.mem s env then let env' = Env.add s (eval e env) env in ([], env') 
-              else ( global_env := Env.add s (eval e env) !global_env; ([], env))
+                else ( global_env := Env.add s (eval e env) !global_env; ([], env))
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
         call_fun f p [Set(s, e', id)] env )
@@ -138,11 +138,20 @@ let exec_prog (p : program): unit =
 
 
     (* Renvoie la fonction à appliquer, les paramètres de l'appel et 
-       l'instruction à appliquer à la fin de l'appel *)
+       l'instruction à appliquer à la fin de l'appel 
+      
+       Returns
+       None if function call not found
+       Some(function, args, Continue) otherwise
+    *)
   and find_call e env =
     match e with
     | Call (s, l)         -> let f = List.find (fun f -> f.name = s) p.functions in
-                              (* Récupère les appels dans les paramètres de l'appel *)
+                              (* Récupère les appels dans les paramètres de l'appel 
+                                 Returns
+                                  Some(function, args, Continue) si appel
+                                  None sinon
+                              *)
                              let rec call_in_param p find =
                               (match p with
                               | [] -> ([], find)
@@ -161,10 +170,12 @@ let exec_prog (p : program): unit =
 
 
     | Unop (op, e)       -> (match find_call e env with None -> None | Some (f, p, c) -> Some (f, p, Unop (op, c)) )
+    
     | Binop (op, e1, e2) -> (match find_call e1 env, find_call e2 env with
                               | None, None -> None
                               | Some (f, p, c), _ -> Some (f, p, Binop (op, c, e2))
                               | None, Some (f, p, c) -> Some (f, p, Binop (op, e1, c)))
+                              
     | Array el            -> 
         (* On parcourt la liste et s'il y a un appel de fonction on renvoie Some(f, c)
            et la liste modifiée pour avoir l'appel de fonction remplacé par Continuation *)
@@ -195,9 +206,13 @@ let exec_prog (p : program): unit =
     | Bool b              -> VBool b
     | Var string          -> (try Env.find string env 
                               with Not_found -> 
-                                Console.write_out (Printf.sprintf "Variable %s not found" string); 
-                                Console.close_console (); 
-                                exit 0)
+                                (try Env.find string !global_env 
+                              with Not_found -> 
+                                Console.write_out (Printf.sprintf "Variable %s not found, %d %d" string (Env.cardinal env) (Env.cardinal !global_env)); 
+                                Console.close_console ();
+                                exit 0
+                                ); 
+                                )
     | Unop (Not, e)       -> VBool (not (evalb e env))
     | Unop (Opp, e)       -> VInt (- (evali e env))
     | Binop (Add, e1, e2) -> VInt(evali e1 env + evali e2 env)
@@ -215,7 +230,7 @@ let exec_prog (p : program): unit =
     | Binop (Or, e1, e2)  -> VBool(evalb e1 env || evalb e2 env)
                             
     | Array el            -> let r = Array.make (List.length el) (VInt 0) in
-                            List.iteri (fun i e -> r.(i) <- VInt (evali e env)) el;
+                            List.iteri (fun i e -> r.(i) <- eval e env) el;
                             VArray( r )
     | GetArr (e1, e2)     -> let a = evala e1 env in
                             let i = evali e2 env in

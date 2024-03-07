@@ -1,26 +1,8 @@
-var x = 1;
+var x;
 var y;
-
-/*function g() {
-  var g;
-  g = 10 + 10;
-  return (g);
-}
-
-function h() {
-  var h; 
-  h = 30;
-  return (h);
-}*/
-
-function m() {
-  return (4);
-}
 
 function f(var i, var j, var k) {
   var a;
-  var b;
-  var c;
 
   if (i==0) {
     a = 1;
@@ -31,13 +13,20 @@ function f(var i, var j, var k) {
   }
 }
 
+function f3(var v) {
+  while (v < 10) {
+    v = v+1;
+  }
+  return (v);
+}
+
+function f2() {
+  return (0);
+}
+
 
 function main() {
-  /*var t = { f(1); f(1) + 12; };*/
-  var l;
-
-  x = 10;
-
-  l = 3;
-  i = f(m(), 5, 6);
+  y = f3(f2());
+  x = f(2, 3, 4);
+  y = f2();
 }

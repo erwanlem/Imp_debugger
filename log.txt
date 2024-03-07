@@ -1,15 +1,8 @@
-var x = 1;
+var x;
 var y;
-
-function m() {
-  
-  return(4);
-}
 
 function f(k, j, i) {
   var a;
-  var b;
-  var c;
   
   if ((i == 0)) {
     a = 1;
@@ -20,12 +13,24 @@ function f(k, j, i) {
   }
 }
 
-function main() {
-  var l;
+function f3(v) {
   
-  x = 10;
-  l = 3;
-  <color>i = f(m(), 5, 6);</color>
+  while ((v < 10)) {
+    v = (v + 1);
+  }
+  return(v);
+}
+
+function f2() {
+  
+  return(0);
+}
+
+function main() {
+  
+  y = f3(f2());
+  x = f(2, 3, 4);
+  <color>y = f2();</color>
 }
 
 

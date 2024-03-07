@@ -29,6 +29,7 @@
 %nonassoc LT LE GT GE EQ NEQ
 %left PLUS SUB
 %left STAR DIV REM
+%nonassoc LB
 
 (* Point d'entrée *)
 %start program
@@ -37,7 +38,6 @@
 %%
 
 (* Règles *)
-(* À COMPLÉTER *)
 
 program:
 | decl=list(var_decl) affect=list(instr) functions=list(fun_def) EOF 
@@ -83,7 +83,7 @@ expr:
 | id=IDENT                                           { Var id }
 | op=unop e=expr                                     { Unop(op, e) }
 | BEGIN l=list(terminated(expr, SEMI)) END           { Array l }
-| id=IDENT LB e=expr RB                              { GetArr(Var id, e) }
+| e1=expr LB e=expr RB                              { GetArr(e1, e) }
 | name=IDENT LPAR p=separated_list(COMMA, expr) RPAR { Call(name, p) }
 ;
 
