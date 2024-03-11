@@ -1,0 +1,17 @@
+var x;
+var y;
+var a = 1;
+
+function f2() {
+  var a = 2;
+  var b = a + x;
+  return (0);
+}
+
+
+function main() {
+  var b = a;
+  x = 2;
+  f2();
+  print(a);
+}

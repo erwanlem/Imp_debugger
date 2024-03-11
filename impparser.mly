@@ -71,7 +71,7 @@ instr:
                                                       | GetArr(id, e) -> SetArr(id, e, value, instruction_id ()) 
                                                       | _ -> failwith "Invalid ID name" }
 | e=expr SEMI                                       { Expr (e, instruction_id ()) }
-| RETURN LPAR e=expr RPAR SEMI                                { Return (e, instruction_id ()) }
+| RETURN LPAR e=expr RPAR SEMI                      { Return (e, instruction_id ()) }
 | WHILE LPAR cond=expr RPAR BEGIN i=list(instr) END { While(cond, i, instruction_id ()) }
 ;
 

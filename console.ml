@@ -71,7 +71,7 @@ let rec match_key match_entry =
         (let _err=Curses.clrtoeol () in ();
         let _err=Curses.deleteln () in ();
         let y, x = Curses.getmaxyx window in
-        let _err = Curses.move (y-1) 0 in ();
+        (*let _err = Curses.wmove window (y-1) 0 in ();*)
         let _err = Curses.refresh () in ();
         (if not (match_entry (!buffer) ()) then ()
         else (buffer := ""; match_key match_entry)))
@@ -90,8 +90,18 @@ let rec match_key match_entry =
         let _err = Curses.mvdelch y (x-1) in
         if String.length (!buffer) > 0 then
           buffer := String.sub (!buffer) 0 (String.length (!buffer)-1);
-        let _err = Curses.refresh () in
+        let _err = Curses.wrefresh window in
         match_key match_entry)
+    else
+      if input = Curses.Key.up then
+        let _err = Curses.wscrl window (-1) in
+        let _err = Curses.wrefresh window in
+        match_key match_entry
+    else
+      if input = Curses.Key.down then
+        let _err = Curses.wscrl window (1) in
+        let _err = Curses.wrefresh window in
+        match_key match_entry
     else
       match_key match_entry
     )
@@ -99,10 +109,12 @@ let rec match_key match_entry =
 
 let init_console () =
   let w = Curses.initscr () in
+  let win = Curses.newwin 100 50 0 0 in
   let _err = Curses.keypad w true in
   let y, x = Curses.getmaxyx w in
-  let _err = Curses.move (y-1) (0) in
-  window := Some w
+  (*let _err = Curses.wmove win (y-1) (0) in*)
+  Curses.scrollok win true;
+  window := Some win
   
 
 let close_console () : unit =
@@ -116,9 +128,9 @@ let print_env env env_global =
   let y, x = Curses.getyx window in
   let h, w = Curses.get_size () in
   let begy, begx = Curses.getbegyx window in
-  let _err = Curses.move begy begx in
+  (*let _err = Curses.wmove window begy begx in*)
   Curses.hline (Char.code '-') w;
-  ignore (Curses.move (begy+1) (begx));
+  (*ignore (Curses.wmove window (begy+1) (begx));*)
 
   (* Affichage des variables *)
   let rec print_value = function
@@ -130,17 +142,18 @@ let print_env env env_global =
   (Env.iter (
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
-      let _err = Curses.addstr out in ()
+      let _err = Curses.waddstr window out in ()
       
       ) env_global);
   Env.iter (
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
-      let _err = Curses.addstr out in ()
+      let _err = Curses.waddstr window out in ()
       
       ) env;
 
-  let _err = Curses.move y x in ()
+  (*let _err = Curses.wmove window y x in ();*)
+  let _err = Curses.refresh () in ()
 
   (* Affichage des variables *)
   (*let rec print_value = function
@@ -162,17 +175,17 @@ let print_env env env_global =
 
 let print_line str =
   let window = get_window () in
-  let _err = Curses.addstr str in
+  let _err = Curses.waddstr window str in
   let y, x = Curses.getyx window in
-  let _err = Curses.move (y+1) 1 in
+  (*let _err = Curses.wmove window (y+1) 1 in*)
   ()
 
 let clear_console () =
   let window = get_window () in
   let y, x = Curses.getyx window in
   Curses.erase ();
-  Curses.clear ();
-  Curses.move y x
+  Curses.clear ()
+  (*Curses.wmove window y x*)
 
 
 
@@ -182,21 +195,23 @@ let print_code prog =
   let window = get_window () in
   let y, x = Curses.getyx window in
   let begy, begx = Curses.getbegyx window in
-  let _err = Curses.move (begy+10) begx in
+  (*let _err = Curses.wmove window (begy+10) begx in*)
   let code = Format.sprintf "%s" (Imppp.print_program Format.str_formatter prog) in
   (try 
   let p1, p2, t = get_str_parts code in
-  (*ignore (Curses.addstr (p1));*)
+  
+  ignore (Curses.waddstr window (p1));
   let _err = Curses.start_color () in
   let _err = Curses.init_pair 1 Curses.Color.black Curses.Color.green in
   Curses.attron (Curses.A.color_pair 1);
-  ignore (Curses.addstr (t));
+  ignore (Curses.waddstr window (t));
   Curses.attr_off (Curses.A.color_pair 1);
   let _err = Curses.use_default_colors () in
-  ignore (Curses.addstr (p2));
+  ignore (Curses.waddstr window (p2));
   Imppp.write_out (code)
-  with NoColorTag -> (ignore (Curses.addstr (code)); Imppp.write_out code) );
-  let _err = Curses.move y x in ()
+  with NoColorTag -> (ignore (Curses.waddstr window (code)); Imppp.write_out code) );
+  (*let _err = Curses.wmove window y x in ();*)
+  let _err = Curses.refresh () in ()
 
 
 

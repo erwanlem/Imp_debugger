@@ -15,6 +15,7 @@ let () =
   try
     let prog = Impparser.program Implexer.token lb in
     close_in c;
+    Typechecker.typecheck_prog prog;
     Interpreter.exec_prog prog;
     
     (*Printf.printf "%s" (Imppp.print_program prog);*)
