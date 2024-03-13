@@ -10,8 +10,7 @@ function f2() {
 
 
 function main() {
-  var b = a;
-  x = 2;
-  f2();
-  print(a);
+  var b = { 1; 2; 3; 4; };
+  var c = { b; b; };
+  var d = { c; c; };
 }

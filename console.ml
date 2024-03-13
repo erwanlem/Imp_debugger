@@ -109,12 +109,11 @@ let rec match_key match_entry =
 
 let init_console () =
   let w = Curses.initscr () in
-  let win = Curses.newwin 100 50 0 0 in
   let _err = Curses.keypad w true in
   let y, x = Curses.getmaxyx w in
   (*let _err = Curses.wmove win (y-1) (0) in*)
-  Curses.scrollok win true;
-  window := Some win
+  Curses.scrollok w true;
+  window := Some w
   
 
 let close_console () : unit =

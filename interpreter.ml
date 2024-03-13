@@ -45,7 +45,7 @@ let exec_prog (p : program): unit =
   let rec exec_instr (i : instr) env =
     match i with
     | Print (e, id)        ->
-      Console.instr_id := id;
+      Standard_out.instr_id := id;
       (match find_call e env with
       | None -> (match eval e env with VInt i  -> Printf.printf "%d%!" i
                                     | VBool b -> Printf.printf "%b%!" b
@@ -55,7 +55,7 @@ let exec_prog (p : program): unit =
         call_fun f p [Print(e', id)] env )
 
     | Set (s, e, id)     ->
-      Console.instr_id := id;
+      Standard_out.instr_id := id;
       (match find_call e env with
       | None -> if Env.mem s env then let env' = Env.add s (eval e env) env in ([], env') 
                 else ( global_env := Env.add s (eval e env) !global_env; ([], env))
@@ -64,7 +64,7 @@ let exec_prog (p : program): unit =
         call_fun f p [Set(s, e', id)] env )
 
     | If (e, s1, s2, id) ->
-      Console.instr_id := id;
+      Standard_out.instr_id := id;
       (match find_call e env with
         | None -> if evalb e env then (s1, env) else (s2, env)
         | Some (f, p, e') -> 
@@ -72,7 +72,7 @@ let exec_prog (p : program): unit =
           call_fun f p [If(e', s1, s2, id)] env )
 
     | While (e, s, id)   ->
-      Console.instr_id := id;
+      Standard_out.instr_id := id;
       (match find_call e env with
         | None -> if evalb e env then (s @ [While(e, s, id)], env) else ([], env)
         | Some (f, p, e') -> 
@@ -80,7 +80,7 @@ let exec_prog (p : program): unit =
           call_fun f p [While(e', s, id)] env )
     
     | Return (e, id)       ->
-      Console.instr_id := id;
+      Standard_out.instr_id := id;
       (match find_call e env with
       | None ->
           let ev = eval e env in
@@ -93,7 +93,7 @@ let exec_prog (p : program): unit =
         call_fun f p [Return (e', id)] env)
 
     | Expr (e, id)         -> 
-      Console.instr_id := id; 
+      Standard_out.instr_id := id; 
       (match find_call e env with
       | None ->
         let ev = eval e env in
@@ -108,7 +108,7 @@ let exec_prog (p : program): unit =
 
 
     | SetArr (e1, e2, e3, id) ->
-        Console.instr_id := id;
+        Standard_out.instr_id := id;
         let a = Array.copy (evala e1 env) in
         let i = evali e2 env in
         a.(i) <- eval e3 env;
@@ -208,8 +208,8 @@ let exec_prog (p : program): unit =
                               with Not_found -> 
                                 (try Env.find string !global_env 
                               with Not_found -> 
-                                Console.write_out (Printf.sprintf "Variable %s not found, %d %d" string (Env.cardinal env) (Env.cardinal !global_env)); 
-                                Console.close_console ();
+                                Standard_out.write_out (Printf.sprintf "Variable %s not found, %d %d" string (Env.cardinal env) (Env.cardinal !global_env)); 
+                                Standard_out.close_console ();
                                 exit 0
                                 ); 
                                 )
@@ -243,7 +243,7 @@ let exec_prog (p : program): unit =
   
   in
   
-  Console.init_console ();
+  Standard_out.init_console ();
 
 
   (* fonction avance d'un pas *)
@@ -252,36 +252,75 @@ let exec_prog (p : program): unit =
     | [] -> ([], env)
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
                   in 
-                  ignore (Console.clear_console ());
-                  Console.print_env env' !global_env;
-                  Console.print_code p;
+                  ignore (Standard_out.clear_console ());
+                  Standard_out.print_env env' !global_env;
+                  Standard_out.print_code p;
                   ((instr' @ l'), env')
   in
+  
+  let step_over seq env =
+    match seq with
+    | [] -> ([], env)
+    | instr :: l' ->
+      let step_id =
+      match instr with
+      | While(_, _, _) ->
+        (match l' with
+        | [] -> -1
+        | instr' :: ll' -> Utils.get_instr_id instr')
+      | _ -> -1
+      in
+      let rec loop seq env =
+        match seq with
+        | [] -> ([], env)
+        | instr :: l' -> 
+          if Utils.get_instr_id instr = step_id then (seq, env)
+          else 
+            let instr', env' = (exec_instr instr env) in
+            loop (instr' @ l') env'
+      in
+      if step_id = -1 then
+        step seq env
+      else begin
+      let seq', env' = loop seq env in
+      Standard_out.print_env env' !global_env;
+      Standard_out.print_code p;
+      (seq', env') end
+      
+  in
+
 
 
   (* fonction retour arrière *)
   let step_back prev seq env =
     let instr, env', stack, ret, id_instr = prev in
-    ignore (Console.clear_console ());
-    Console.print_env env' !global_env;
-    Console.print_code p;
-    Console.instr_id := id_instr;
+    ignore (Standard_out.clear_console ());
+    Standard_out.print_env env' !global_env;
+    Standard_out.print_code p;
+    Standard_out.instr_id := id_instr;
     (instr, env', stack, ret)
   
   in
 
 
   let match_entry entry =
-    fun () ->
-      if (!p_seq) = [] then (Console.close_console (); false) else 
-      match entry with
-      | "exit"      -> Console.close_console (); false
+      if (!p_seq) = [] then (Standard_out.close_console (); false) else begin
+     match entry with
+      | "exit"      -> Standard_out.close_console (); false
 
 
       | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
-                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Console.instr_id) :: !undo_stack;
+                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
                         let p', env' = step (!p_seq) (!env) in
+                        p_seq := p';
+                        env := env';
+                        true
+        
+      | "so"        ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
+                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        
+                        let p', env' = step_over (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
                         true
@@ -298,9 +337,9 @@ let exec_prog (p : program): unit =
                       else true
 
 
-      | c           -> true
+      | c           -> true end;
 
   in
-  Console.match_key match_entry;
+  ignore (Standard_out.match_key match_entry);
 
   ()
