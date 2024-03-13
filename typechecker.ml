@@ -1,11 +1,5 @@
 open Imp
-
-type types =
-  | TInt
-  | TBool
-  | TArray
-  | TUndef
-  | TNull
+open Type_infer
 
 let types_to_string = function
   | TInt -> "int"

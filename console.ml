@@ -1,5 +1,6 @@
 open Imp
 
+(*
 let instr_id = ref 0
 
 
@@ -222,3 +223,6 @@ let write_out msg =
   Printf.fprintf oc "%s\n" msg;
   (* write something *)
   close_out oc
+
+
+*)
