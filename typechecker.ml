@@ -1,15 +1,19 @@
 open Imp
 open Type_infer
 
-let types_to_string = function
+let rec types_to_string = function
   | TInt -> "int"
   | TBool -> "bool"
   | TArray a -> "array"
   | TNull  -> "null"
-  | _ -> ""
+  | TVar v  -> "Var " ^ v
+  | Fun (t1, t2) -> "Fun " ^ types_to_string t1 ^ " -> " ^ types_to_string t2   
 
 exception Error of string
 let error s = raise (Error s)
+
+let print_constraints c =
+  List.iter (fun (c1, c2) -> Printf.printf "%s = %s\n%!" (types_to_string c1) (types_to_string c2)) c
 
 
 let get_var_name =
@@ -26,8 +30,8 @@ module Env = Map.Make(String)
 type tenv = typ Env.t
 
 let add_env l tenv =
-  List.fold_left (fun env (s, t, _) -> match t with Some t -> Env.add s TNull env
-                                                    | None -> Env.add s TNull env) tenv l
+  List.fold_left (fun env (s, t, _) -> match t with Some t -> Env.add s (get_var_name ()) env
+                                                    | None -> Env.add s (get_var_name ()) env) tenv l
 
 let typecheck_prog p =
   let tenv = add_env p.globals Env.empty in
@@ -37,9 +41,9 @@ let typecheck_prog p =
 
   let rec type_expr e tenv = match e with
     | Null   -> ([], TNull)
-    | Int i  -> ([], TInt) 
+    | Int i  -> ([], TInt)
     | Bool _ -> ([], TBool)
-    | Var s  -> ([], TVar (get_var_name ())) 
+    | Var s  -> (try let n = Env.find s tenv in ([], TVar n) with Not_found -> failwith ("Variable " ^ s ^ " not found") )
     (* Binop INT *)
     | Binop(Add, e1, e2) | Binop(Sub, e1, e2) | Binop(Mul, e1, e2)
     | Binop(Div, e1, e2) | Binop(Rem, e1, e2) -> 
@@ -71,7 +75,7 @@ let typecheck_prog p =
       ([(TVar n, TInt); (t, TInt)] @ c, TVar n)
     | Unop(Not, e)       ->
       let c, t = type_expr e tenv in
-      let n = get_var_name () in 
+      let n = get_var_name () in
       ([(TVar n, TBool); (t, TBool)] @ c, TVar n)
     
     | Call (s, l)    ->
@@ -117,8 +121,9 @@ let typecheck_prog p =
       (c, TVar n)
     | Set(m, e, _)     ->
       let c, t = type_expr e tenv in
+      let var_name = try Env.find m tenv with Not_found -> (failwith "Variable " ^ m ^ " not found") in
       let n = get_var_name () in
-      ([] @ c, TVar n) (* TODO *)
+      ([(TVar var_name, t)] @ c, TVar n) (* TODO *)
     | SetArr (e1, e2, e3, _) ->
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
@@ -142,5 +147,9 @@ let typecheck_prog p =
   let constraints = List.fold_left (fun acc f -> let c, t = check_functions f tenv in c @ acc ) [] p.functions in
   let main_constr, _ = check_functions p.main tenv in
   let constr = constraints @ main_constr in
-  ignore(unify constr)
+  print_constraints constr;
+
+  Printf.printf "\n\n";
+
+  print_constraints (unify constr)
   
