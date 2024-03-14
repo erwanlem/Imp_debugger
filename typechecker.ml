@@ -4,8 +4,9 @@ open Type_infer
 let types_to_string = function
   | TInt -> "int"
   | TBool -> "bool"
-  | TArray -> "array"
+  | TArray a -> "array"
   | TNull  -> "null"
+  | _ -> ""
 
 exception Error of string
 let error s = raise (Error s)
@@ -22,7 +23,7 @@ let type_error ty_actual ty_expected =
            (types_to_string ty_expected) (types_to_string ty_actual))
 
 module Env = Map.Make(String)
-type tenv = base_type Env.t
+type tenv = typ Env.t
 
 let add_env l tenv =
   List.fold_left (fun env (s, t, _) -> match t with Some t -> Env.add s TNull env
@@ -30,54 +31,107 @@ let add_env l tenv =
 
 let typecheck_prog p =
   let tenv = add_env p.globals Env.empty in
-  let func =
-    List.fold_left (fun env f -> Env.add f.name f env) Env.empty p.functions in
+  (*let func =
+    List.fold_left (fun env f -> Env.add f.name f env) Env.empty p.functions in*)
 
 
-  let rec check e typ tenv =
-    let typ_e = type_expr e tenv in
-    if typ_e <> typ then type_error typ_e typ
-
-  and type_expr e tenv = match e with
-    | Null   -> Type TNull
-    | Int i  -> Type TInt
-    | Bool _ -> Type TBool
-    | Var s  -> TVar (get_var_name ())
+  let rec type_expr e tenv = match e with
+    | Null   -> ([], TNull)
+    | Int i  -> ([], TInt) 
+    | Bool _ -> ([], TBool)
+    | Var s  -> ([], TVar (get_var_name ())) 
     (* Binop INT *)
     | Binop(Add, e1, e2) | Binop(Sub, e1, e2) | Binop(Mul, e1, e2)
-    | Binop(Div, e1, e2) | Binop(Rem, e1, e2) -> check e1 TInt tenv; check e2 TInt tenv; Type TInt
+    | Binop(Div, e1, e2) | Binop(Rem, e1, e2) -> 
+      let c1, t1 = type_expr e1 tenv in
+      let c2, t2 = type_expr e2 tenv in
+      let n = get_var_name () in
+      ([(t1, t2); (TVar n, TInt)] @ c1 @ c2, TVar n)
     (* Binop BOOL *)
     | Binop(Lt , e1, e2) | Binop(Le , e1, e2)
-    | Binop(Gt , e1, e2) | Binop(Ge , e1, e2) -> check e1 TInt tenv; check e2 TInt tenv; Type TBool
-    | Binop(Neq, e1, e2) | Binop(Eq, e1, e2)  -> check e1 (type_expr e2 tenv) tenv; Type TBool
-    | Binop(And, e1, e2) | Binop(Or, e1, e2)  -> check e1 TBool tenv; check e2 TBool tenv; Type TBool
+    | Binop(Gt , e1, e2) | Binop(Ge , e1, e2) ->
+      let c1, t1 = type_expr e1 tenv in
+      let c2, t2 = type_expr e2 tenv in
+      let n = get_var_name () in
+      ([(t1, t2); (t1, TInt); (t2, TInt); (TVar n, TBool)] @ c1 @ c2, TVar n)
+    | Binop(Neq, e1, e2) | Binop(Eq, e1, e2)  ->
+      let c1, t1 = type_expr e1 tenv in
+      let c2, t2 = type_expr e2 tenv in
+      let n = get_var_name () in
+      ([(TVar n, TBool); (t1, t2)] @ c1 @ c2, TVar n)
+    | Binop(And, e1, e2) | Binop(Or, e1, e2)  ->
+      let c1, t1 = type_expr e1 tenv in
+      let c2, t2 = type_expr e2 tenv in
+      let n = get_var_name () in
+      ([(TVar n, TBool); (t1, TBool); (t2, TBool)] @ c1 @ c2, TVar n)
     (* Unop *)
-    | Unop(Opp, e)       -> Type TInt
-    | Unop(Not, e)       -> Type TBool
+    | Unop(Opp, e)       -> 
+      let c, t = type_expr e tenv in
+      let n = get_var_name () in 
+      ([(TVar n, TInt); (t, TInt)] @ c, TVar n)
+    | Unop(Not, e)       ->
+      let c, t = type_expr e tenv in
+      let n = get_var_name () in 
+      ([(TVar n, TBool); (t, TBool)] @ c, TVar n)
     
-    | Call (s, l)    -> 
-      if not (Env.mem s func) then error ("Undefined function " ^ s)
+    | Call (s, l)    ->
+      let n = get_var_name () in 
+      ([], TVar n) (* TODO *)
+      (*if not (Env.mem s func) then error ("Undefined function " ^ s)
       else let f = Env.find s func in
-      if List.length f.params = List.length l then TNull else error "Invalid arguments"
+      if List.length f.params = List.length l then TNull else error "Invalid arguments"*)
 
-    | Array l        -> Type TArray
-    | GetArr (a, i)  -> Type TNull
-    | Continuation   -> Type TNull
+    | Array l        ->
+      let n = get_var_name () in 
+      ([], TArray (TVar n)) (* TODO *)
+    | GetArr (a, i)  ->
+      let c1, t1 = type_expr i tenv in
+      let n = get_var_name () in
+      ([(t1, TInt)] @ c1, TVar n) (* TODO *)
+    | Continuation   -> ([], TNull) (* Never used *)
                             
   in
 
   let rec check_instr i tenv = match i with
-    | Print (e, _) -> [] (* Accepte tous les types *)
-    | If(e, i1, i2, _) -> 
+    | Print (e, _) ->
+      let c, t = check_instr i tenv in
       let n = get_var_name () in
-      (check_instr i1 tenv) @ (check_instr i2 tenv) @ [Var(get_var_name (), TBool); Var(n, TAlpha); Var(n, TAlpha)]
-    | While(e, s, _)   -> check e TBool tenv
-    | Expr(e, _)       -> check e TNull tenv
-    | Return(e, _)     -> ()
-    | Set(m, e, _)     -> check e TNull tenv
-    | SetArr (e1, e2, e3, _) -> check e1 TArray tenv; check e2 TInt tenv; check e3 TNull tenv
+      (c, TVar n) (* Accepte tous les types *)
+    | If(e, i1, i2, _) ->
+      let c1, t = type_expr e tenv in
+      let c2, t = check_seq i1 tenv in
+      let c3, t = check_seq i2 tenv in
+      let n = get_var_name () in
+      ([(t, TBool)] @ c1 @ c2 @ c3, TVar n)
+    | While(e, s, _)   ->
+      let c, t = check_seq s tenv in
+      let n = get_var_name () in
+      (c, TVar n)
+    | Expr(e, _)       ->
+      let c, t = type_expr e tenv in
+      let n = get_var_name () in
+      (c, TVar n)
+    | Return(e, _)     ->
+      let c, t = type_expr e tenv in 
+      let n = get_var_name () in
+      (c, TVar n)
+    | Set(m, e, _)     ->
+      let c, t = type_expr e tenv in
+      let n = get_var_name () in
+      ([] @ c, TVar n) (* TODO *)
+    | SetArr (e1, e2, e3, _) ->
+      let c1, t1 = type_expr e1 tenv in
+      let c2, t2 = type_expr e2 tenv in
+      let c3, t3 = type_expr e3 tenv in
+      let n = get_var_name () in
+      ([(t2, TInt)] @ c1 @ c2 @ c3, TVar n)
   and check_seq s tenv =
-    List.iter (fun i -> check_instr i tenv) s
+    let n = get_var_name () in
+    (List.fold_left (
+      fun acc i ->
+        let c, t = check_instr i tenv in
+        c @ acc
+      ) [] s, TVar n)
   in
 
   let rec check_functions f tenv =
@@ -85,5 +139,7 @@ let typecheck_prog p =
     check_seq f.code env
   in
 
-  List.iter (fun c -> check_functions c tenv) p.functions;
-  check_functions p.main tenv
+  let constraints = List.fold_left (fun acc f -> let c, t = check_functions f tenv in c @ acc ) [] p.functions in
+  let main_constr, _ = check_functions p.main tenv in
+  constraints @ main_constr;
+  
