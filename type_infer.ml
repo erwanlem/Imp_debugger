@@ -35,31 +35,13 @@ let substitution x t c =
       | _, _ -> (s, t)::acc
   ) [] c
   
-(*
-(* Unification des contraintes *)
-let rec unify c h =
-  let if_pattern v cond =
-    match v with
-    | TVar v -> if cond = "TVar" then v else ""
-    | Type t -> if cond = "Type" then "." else ""
-    | Fun (c1, c2) -> if cond = "Fun" then "." else ""
-  in
-  match c with
-  | [] -> ()
-  | (s, t) :: c' when s = t -> unify c' h*
-  | (TVar x, t) :: c' | ... when ... -> 
-    else if if_pattern s "TVar" <> "" && not (var_in (if_pattern s "TVar") t) then
-      match s with TVar v ->
-        ()
-      | _ -> failwith "Fail"
-    else if if_pattern t "TVar" <> "" && not (var_in (if_pattern t "TVar") s) then
-      match t with TVar t' -> ()
-      | _ -> failwith "Fail"
-    else if if_pattern s "Fun" <> "" && if_pattern t "Fun" <> "" then
-      match s, t with 
-      Fun (s1, s2), Fun (t1, t2) -> ()
-      | _ -> failwith "Fail"
-    else
-      failwith "Fail unification"
 
-*)
+(* Unification des contraintes *)
+let rec unify c =
+  match c with
+  | [] -> []
+  | (s, t) :: c' when s = t -> unify c'
+  | (TVar x, t) :: c' when not (var_in x t) -> unify (substitution x t c') @ (substitution x t [(TVar x, t)])
+  | (t, TVar x) :: c' when not (var_in x t) -> unify (substitution x t c') @ (substitution x t [(t, TVar x)])
+  | (Fun (s1, s2), Fun (t1, t2)) :: c' -> unify (c' @ [(s1, t1); (s2, t2)])
+  | _ -> failwith "Fail"

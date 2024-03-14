@@ -141,5 +141,6 @@ let typecheck_prog p =
 
   let constraints = List.fold_left (fun acc f -> let c, t = check_functions f tenv in c @ acc ) [] p.functions in
   let main_constr, _ = check_functions p.main tenv in
-  constraints @ main_constr;
+  let constr = constraints @ main_constr in
+  ignore(unify constr)
   
