@@ -25,22 +25,15 @@ let rec var_in v t =
 (* Remplace x par t dans h
    avec c une liste de contraintes *)
 let substitution x t c =
+  let rec sub_aux x t v =
+    match v with
+      | TVar _ when v = x -> t
+      | Fun (a, b) -> Fun(sub_aux x t a, sub_aux x t b)
+      | _ -> v
+  in
   List.fold_left (
     fun acc (s, t') ->
-      match s, t' with
-      | TVar v, TVar v' -> 
-        if s = x && t' = x then (t, t) :: acc 
-        else if s = x then (t, t')::acc 
-        else if t' = x then (s, t)::acc 
-        else (s,t')::acc 
-      
-      | TVar v, _ ->
-        if s = x then (t, t')::acc
-        else (s, t')::acc
-      | _, TVar v ->
-        if t' = x then (s, t)::acc
-        else (s, t')::acc
-      | _, _ -> (s, t)::acc
+      (sub_aux x t s, sub_aux x t t') :: acc
   ) [] c
   
 
@@ -49,7 +42,7 @@ let rec unify c =
   match c with
   | [] -> []
   | (s, t) :: c' when s = t -> unify c'
-  | (TVar x, t) :: c' when not (var_in x t) -> substitution (TVar x) t (unify ((substitution (TVar x) t c'))) 
-  | (t, TVar x) :: c' when not (var_in x t) -> substitution (TVar x) t (unify ((substitution (TVar x) t c')))
+  | (TVar x, t) :: c' when not (var_in x t) -> (unify ((substitution (TVar x) t c'))) @ [(TVar x, t)]
+  | (t, TVar x) :: c' when not (var_in x t) -> (unify ((substitution (TVar x) t c'))) @ [(TVar x, t)]
   | (Fun (s1, s2), Fun (t1, t2)) :: c' -> unify (c' @ [(s1, t1); (s2, t2)])
   | (s, t) :: _ -> failwith ("Fail " ^ (typ_to_string s) ^ " = " ^ (typ_to_string t))

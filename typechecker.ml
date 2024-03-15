@@ -143,7 +143,7 @@ let typecheck_prog p =
   let constr = constraints @ main_constr in
   print_constraints constr;
 
-  Printf.printf "\n\n-->";
+  Printf.printf "\n\n";
 
   print_constraints (unify constr)
   
