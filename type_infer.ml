@@ -41,7 +41,7 @@ let rec unify c =
   match c with
   | [] -> []
   | (s, t) :: c' when s = t -> unify c'
-  | (TVar x, t) :: c' when not (var_in x t) -> unify (substitution x t c') @ (substitution x t [(TVar x, t)])
-  | (t, TVar x) :: c' when not (var_in x t) -> unify (substitution x t c') @ (substitution x t [(t, TVar x)])
+  | (TVar x, t) :: c' when not (var_in x t) -> unify ((substitution x t c') @ (substitution x t [(TVar x, t)])) 
+  | (t, TVar x) :: c' when not (var_in x t) -> unify ((substitution x t c') @ (substitution x t [(t, TVar x)]))
   | (Fun (s1, s2), Fun (t1, t2)) :: c' -> unify (c' @ [(s1, t1); (s2, t2)])
   | _ -> failwith "Fail"
