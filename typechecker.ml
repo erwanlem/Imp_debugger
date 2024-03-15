@@ -1,19 +1,13 @@
 open Imp
 open Type_infer
 
-let rec types_to_string = function
-  | TInt -> "int"
-  | TBool -> "bool"
-  | TArray a -> "array"
-  | TNull  -> "null"
-  | TVar v  -> "Var " ^ v
-  | Fun (t1, t2) -> "Fun " ^ types_to_string t1 ^ " -> " ^ types_to_string t2   
-
 exception Error of string
 let error s = raise (Error s)
 
 let print_constraints c =
-  List.iter (fun (c1, c2) -> Printf.printf "%s = %s\n%!" (types_to_string c1) (types_to_string c2)) c
+  Printf.printf "[";
+  List.iter (fun (c1, c2) -> Printf.printf "%s = %s\n%!" (typ_to_string c1) (typ_to_string c2)) c;
+  Printf.printf "]"
 
 
 let get_var_name =
@@ -24,7 +18,7 @@ let get_var_name =
 
 let type_error ty_actual ty_expected =
   error (Printf.sprintf "expected %s, got %s"
-           (types_to_string ty_expected) (types_to_string ty_actual))
+           (typ_to_string ty_expected) (typ_to_string ty_actual))
 
 module Env = Map.Make(String)
 type tenv = typ Env.t
@@ -149,7 +143,7 @@ let typecheck_prog p =
   let constr = constraints @ main_constr in
   print_constraints constr;
 
-  Printf.printf "\n\n";
+  Printf.printf "\n\n-->";
 
   print_constraints (unify constr)
   
