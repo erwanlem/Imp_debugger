@@ -4,5 +4,5 @@ function main() {
 
   x = 2;
   y = true;
-  x = x + y;
+  x = x + x;
 }

@@ -44,5 +44,6 @@ let rec unify c =
   | (s, t) :: c' when s = t -> unify c'
   | (TVar x, t) :: c' when not (var_in x t) -> (unify ((substitution (TVar x) t c'))) @ [(TVar x, t)]
   | (t, TVar x) :: c' when not (var_in x t) -> (unify ((substitution (TVar x) t c'))) @ [(TVar x, t)]
+  | (TArray a, TArray b) :: c' -> unify (c' @ [(a, b)])
   | (Fun (s1, s2), Fun (t1, t2)) :: c' -> unify (c' @ [(s1, t1); (s2, t2)])
   | (s, t) :: _ -> failwith ("Fail " ^ (typ_to_string s) ^ " = " ^ (typ_to_string t))

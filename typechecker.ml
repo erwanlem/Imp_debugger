@@ -29,8 +29,8 @@ let add_env l tenv =
 
 let typecheck_prog p =
   let tenv = add_env p.globals Env.empty in
-  (*let func =
-    List.fold_left (fun env f -> Env.add f.name f env) Env.empty p.functions in*)
+  let func =
+    List.fold_left (fun env f -> Env.add f.name f env) Env.empty p.functions in
 
 
   let rec type_expr e tenv = match e with
@@ -73,20 +73,30 @@ let typecheck_prog p =
       ([(TVar n, TBool); (t, TBool)] @ c, TVar n)
     
     | Call (s, l)    ->
-      let n = get_var_name () in 
+      if not (Env.mem s func) then error ("Undefined function " ^ s)
+      else let f = Env.find s func in
+      let params = f.params in
+      
+
+      let n = get_var_name () in
       ([], TVar n) (* TODO *)
       (*if not (Env.mem s func) then error ("Undefined function " ^ s)
       else let f = Env.find s func in
       if List.length f.params = List.length l then TNull else error "Invalid arguments"*)
 
     | Array l        ->
+      let c0, t0 = type_expr (List.hd l) tenv in
+      let cond = List.fold_left (fun acc e -> let c, t = type_expr e tenv in (t, t0) :: (c @ acc)) [] (List.tl l) in
       let n = get_var_name () in 
-      ([], TArray (TVar n)) (* TODO *)
+      (cond @ c0, TArray (TVar n))
+
     | GetArr (a, i)  ->
       let c1, t1 = type_expr i tenv in
+      let c2, t2 = type_expr a tenv in
       let n = get_var_name () in
-      ([(t1, TInt)] @ c1, TVar n) (* TODO *)
-    | Continuation   -> ([], TNull) (* Never used *)
+      ([(t1, TInt); (t2, TArray (TVar n))] @ c1 @ c2, TVar n)
+
+    | Continuation   -> ([], TNull) (* Never matched *)
                             
   in
 
@@ -117,7 +127,7 @@ let typecheck_prog p =
       let c, t = type_expr e tenv in
       let var_name = try Env.find m tenv with Not_found -> (failwith "Variable " ^ m ^ " not found") in
       let n = get_var_name () in
-      ([(TVar var_name, t)] @ c, TVar n) (* TODO *)
+      ([(TVar var_name, t)] @ c, TVar n)
     | SetArr (e1, e2, e3, _) ->
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
@@ -140,10 +150,9 @@ let typecheck_prog p =
 
   let constraints = List.fold_left (fun acc f -> let c, t = check_functions f tenv in c @ acc ) [] p.functions in
   let main_constr, _ = check_functions p.main tenv in
-  let constr = constraints @ main_constr in
-  print_constraints constr;
+  ignore (constraints @ main_constr);
+  ()
+  (*print_constraints constr;*)
 
-  Printf.printf "\n\n";
-
-  print_constraints (unify constr)
+  (*print_constraints (unify constr)*)
   
