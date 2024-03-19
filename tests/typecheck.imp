@@ -1,3 +1,10 @@
+function f() {
+  var c = 0;
+
+  return (c);
+}
+
+
 function main() {
   var x;
   var y;

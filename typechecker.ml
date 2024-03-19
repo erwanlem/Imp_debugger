@@ -10,6 +10,8 @@ let print_constraints c =
   Printf.printf "]"
 
 
+
+
 let get_var_name =
   let count = ref 0 in
   fun () ->
@@ -24,8 +26,10 @@ module Env = Map.Make(String)
 type tenv = typ Env.t
 
 let add_env l tenv =
-  List.fold_left (fun env (s, t, _) -> match t with Some t -> Env.add s (get_var_name ()) env
-                                                    | None -> Env.add s (get_var_name ()) env) tenv l
+  List.fold_left (fun env (s, e, _) ->
+    match e with
+    | None -> Env.add s (get_var_name ()) env) tenv l
+    | Some e -> Env.add s 
 
 let typecheck_prog p =
   let tenv = add_env p.globals Env.empty in
@@ -113,16 +117,17 @@ let typecheck_prog p =
       ([(t, TBool)] @ c1 @ c2 @ c3, TVar n)
     | While(e, s, _)   ->
       let c, t = check_seq s tenv in
+      let c1, t1 = type_expr e tenv in
       let n = get_var_name () in
-      (c, TVar n)
+      ([(t1, TBool)] @ c1 @ c, TVar n)
     | Expr(e, _)       ->
       let c, t = type_expr e tenv in
       let n = get_var_name () in
-      (c, TVar n)
+      ([(t, TVar n)] @ c, TVar n)
     | Return(e, _)     ->
       let c, t = type_expr e tenv in 
       let n = get_var_name () in
-      (c, TVar n)
+      ([(t, TVar n)] @ c, TVar n)
     | Set(m, e, _)     ->
       let c, t = type_expr e tenv in
       let var_name = try Env.find m tenv with Not_found -> (failwith "Variable " ^ m ^ " not found") in
@@ -144,14 +149,25 @@ let typecheck_prog p =
   in
 
   let rec check_functions f tenv =
-    let env = add_env f.locals (add_env (List.fold_left (fun acc s -> (s, Some TNull, 0) :: acc) [] f.params) tenv) in
+    let env = add_env f.locals (add_env (List.fold_left (fun acc s -> (s, None, 0) :: acc) [] f.params) tenv) in
     check_seq f.code env
   in
 
-  let constraints = List.fold_left (fun acc f -> let c, t = check_functions f tenv in c @ acc ) [] p.functions in
+  let constraints = List.fold_left (
+    fun acc f -> 
+      let c, t = check_functions f tenv in 
+      Printf.printf "%s\n%!" f.name;
+      Printf.printf "%s\n%!" (typ_to_string t);
+      print_constraints c;
+      Printf.printf "\n%!";
+      let c' = unify c in
+      print_constraints c';
+      Printf.printf "\n\n%!";
+      c@acc
+    ) [] p.functions in
   let main_constr, _ = check_functions p.main tenv in
-  ignore (constraints @ main_constr);
-  ()
+  let constr = constraints @ main_constr in
+  ignore(unify constr)
   (*print_constraints constr;*)
 
   (*print_constraints (unify constr)*)
