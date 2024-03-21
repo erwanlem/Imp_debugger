@@ -1,15 +1,10 @@
-function f() {
-  var c = 0;
 
-  return (c);
+function f(a, b, c, d) {
+
+  return (d + b);
 }
 
 
 function main() {
-  var x;
-  var y;
-
-  x = 2;
-  y = true;
-  x = x + x;
+  f(true, 1, true, 2);
 }

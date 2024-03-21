@@ -290,7 +290,6 @@ let exec_prog (p : program): unit =
   in
 
 
-
   (* fonction retour arrière *)
   let step_back prev seq env =
     let instr, env', stack, ret, id_instr = prev in
@@ -308,7 +307,6 @@ let exec_prog (p : program): unit =
      match entry with
       | "exit"      -> Standard_out.close_console (); false
 
-
       | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
@@ -324,7 +322,6 @@ let exec_prog (p : program): unit =
                         p_seq := p';
                         env := env';
                         true
-
                         
       | "undo"      -> if List.length (!undo_stack) > 0 then
                       (
@@ -335,7 +332,6 @@ let exec_prog (p : program): unit =
                         local_env_stack := stack;
                         true)
                       else true
-
 
       | c           -> true end;
 

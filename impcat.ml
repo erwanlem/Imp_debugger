@@ -1,5 +1,6 @@
 open Format
 open Lexing
+open Array_visualize
 
 let file = Sys.argv.(1)
 

@@ -1,7 +1,22 @@
 # Débogueur pour le langage Imp
 
+## Travaux effectués
+
+Les fonctionnalités implémentées sont les suivantes:
+- fonctionnement général du débogueur avec
+    - **pas en avant** (`step`)
+    - **retour arrière** (`step_back`)
+    - **passage d'un bloc** (`step_over`)
+    - **suivi mémoire** des tableaux
+- améliorations du langage
+    - **inférence de type**
+- affichage console
+    - option affichage standard
+    - option affichage avec *ncurses*
 
 
+
+## Utilisation
 
 > Compilation :
 >   dune build

@@ -26,15 +26,17 @@ module Env = Map.Make(String)
 type tenv = typ Env.t
 
 let add_env l tenv =
-  List.fold_left (fun env (s, e, _) ->
+  
+  List.fold_left (fun (env, code) (s, e, id) ->
     match e with
-    | None -> Env.add s (get_var_name ()) env) tenv l
-    | Some e -> Env.add s 
+    | None -> (Env.add s (get_var_name ()) env, code)
+    | Some e -> (Env.add s (get_var_name ()) env, Set(s, e, id) :: code)
+    ) (tenv, []) l
 
 let typecheck_prog p =
-  let tenv = add_env p.globals Env.empty in
+  let tenv, global_set_variables = add_env p.globals Env.empty in
   let func =
-    List.fold_left (fun env f -> Env.add f.name f env) Env.empty p.functions in
+    List.fold_left (fun env f -> Env.add f.name (List.fold_left (fun acc e -> get_var_name () :: acc) [] f.params, get_var_name ()) env) Env.empty p.functions in
 
 
   let rec type_expr e tenv = match e with
@@ -48,14 +50,14 @@ let typecheck_prog p =
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
       let n = get_var_name () in
-      ([(t1, t2); (TVar n, TInt)] @ c1 @ c2, TVar n)
+      ([(TVar n, TInt); (t1, TInt); (t2, TInt)] @ c1 @ c2, TVar n)
     (* Binop BOOL *)
     | Binop(Lt , e1, e2) | Binop(Le , e1, e2)
     | Binop(Gt , e1, e2) | Binop(Ge , e1, e2) ->
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
       let n = get_var_name () in
-      ([(t1, t2); (t1, TInt); (t2, TInt); (TVar n, TBool)] @ c1 @ c2, TVar n)
+      ([(t1, TInt); (t2, TInt); (TVar n, TBool)] @ c1 @ c2, TVar n)
     | Binop(Neq, e1, e2) | Binop(Eq, e1, e2)  ->
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
@@ -78,16 +80,15 @@ let typecheck_prog p =
     
     | Call (s, l)    ->
       if not (Env.mem s func) then error ("Undefined function " ^ s)
-      else let f = Env.find s func in
-      let params = f.params in
-      
-
-      let n = get_var_name () in
-      ([], TVar n) (* TODO *)
-      (*if not (Env.mem s func) then error ("Undefined function " ^ s)
-      else let f = Env.find s func in
-      if List.length f.params = List.length l then TNull else error "Invalid arguments"*)
-
+      else 
+        let params, ret = Env.find s func in
+        (try
+      (List.fold_left2 (
+        fun acc a b ->
+          let c, t = type_expr b tenv in
+          (TVar a, t) :: List.rev_append c acc
+        ) [] params l, TVar ret)
+        with Invalid_argument _ -> error ("Invalid argument for function " ^ s) )
     | Array l        ->
       let c0, t0 = type_expr (List.hd l) tenv in
       let cond = List.fold_left (fun acc e -> let c, t = type_expr e tenv in (t, t0) :: (c @ acc)) [] (List.tl l) in
@@ -104,71 +105,59 @@ let typecheck_prog p =
                             
   in
 
-  let rec check_instr i tenv = match i with
+  let rec check_instr i tenv var = match i with
     | Print (e, _) ->
-      let c, t = check_instr i tenv in
-      let n = get_var_name () in
-      (c, TVar n) (* Accepte tous les types *)
+      let c, t = type_expr e tenv in
+      (c) (* Accepte tous les types *)
     | If(e, i1, i2, _) ->
       let c1, t = type_expr e tenv in
-      let c2, t = check_seq i1 tenv in
-      let c3, t = check_seq i2 tenv in
-      let n = get_var_name () in
-      ([(t, TBool)] @ c1 @ c2 @ c3, TVar n)
+      let c2 = check_seq i1 tenv var in
+      let c3 = check_seq i2 tenv var in
+      ([(t, TBool)] @ c1 @ c2 @ c3)
     | While(e, s, _)   ->
-      let c, t = check_seq s tenv in
+      let c = check_seq s tenv var in
       let c1, t1 = type_expr e tenv in
-      let n = get_var_name () in
-      ([(t1, TBool)] @ c1 @ c, TVar n)
+      ([(t1, TBool)] @ c1 @ c)
     | Expr(e, _)       ->
       let c, t = type_expr e tenv in
       let n = get_var_name () in
-      ([(t, TVar n)] @ c, TVar n)
+      ([(t, TVar n)] @ c)
     | Return(e, _)     ->
       let c, t = type_expr e tenv in 
-      let n = get_var_name () in
-      ([(t, TVar n)] @ c, TVar n)
+      ([(TVar var, t)] @ c)
     | Set(m, e, _)     ->
       let c, t = type_expr e tenv in
       let var_name = try Env.find m tenv with Not_found -> (failwith "Variable " ^ m ^ " not found") in
-      let n = get_var_name () in
-      ([(TVar var_name, t)] @ c, TVar n)
+      ([(TVar var_name, t)] @ c)
     | SetArr (e1, e2, e3, _) ->
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
       let c3, t3 = type_expr e3 tenv in
-      let n = get_var_name () in
-      ([(t2, TInt)] @ c1 @ c2 @ c3, TVar n)
-  and check_seq s tenv =
-    let n = get_var_name () in
+      ([(t2, TInt)] @ c1 @ c2 @ c3)
+  and check_seq s tenv var =
     (List.fold_left (
       fun acc i ->
-        let c, t = check_instr i tenv in
-        c @ acc
-      ) [] s, TVar n)
+        let c = check_instr i tenv var in c @ acc
+      ) [] s)
   in
 
-  let rec check_functions f tenv =
-    let env = add_env f.locals (add_env (List.fold_left (fun acc s -> (s, None, 0) :: acc) [] f.params) tenv) in
-    check_seq f.code env
+  let rec check_function f tenv =
+    let var = get_var_name () in
+    let var_params = Env.find f.name func in
+    let env = List.fold_left2 (fun acc a b -> Env.add a b acc) tenv (List.rev f.params) (fst var_params) in
+    let env, code' = add_env f.locals env in
+    let s = check_seq (code' @ f.code) env var in
+    s
   in
-
   let constraints = List.fold_left (
     fun acc f -> 
-      let c, t = check_functions f tenv in 
-      Printf.printf "%s\n%!" f.name;
-      Printf.printf "%s\n%!" (typ_to_string t);
-      print_constraints c;
-      Printf.printf "\n%!";
-      let c' = unify c in
-      print_constraints c';
-      Printf.printf "\n\n%!";
+      let c = check_function f tenv in
       c@acc
     ) [] p.functions in
-  let main_constr, _ = check_functions p.main tenv in
+  let main_constr = check_function p.main tenv in
   let constr = constraints @ main_constr in
-  ignore(unify constr)
-  (*print_constraints constr;*)
+  ignore(unify constr);
+  print_constraints constr
 
   (*print_constraints (unify constr)*)
   

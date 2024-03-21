@@ -46,9 +46,9 @@ program:
 ;
 
 fun_def:
-| FUNCTION name=IDENT LPAR param=separated_list(COMMA, simple_var_decl) RPAR
+| FUNCTION name=IDENT LPAR param=separated_list(COMMA, IDENT) RPAR
     BEGIN decl=list(var_decl) code=list(instr) END
-    { {name; code; params=List.fold_left (fun acc (id, _, _) -> id :: acc) [] param; 
+    { {name; code; params=List.fold_left (fun acc id -> id :: acc) [] param; 
     locals=decl; id=instruction_id ()} }
 ;
 
