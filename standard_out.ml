@@ -63,8 +63,12 @@ let rec match_key match_entry =
   match_entry input; match_key match_entry
 
 
+(* get the console ready for display
+  Mainly used when using ncurses library   
+*)
 let init_console () =
-  ()
+  if (Sys.command "clear") = 0 then ()
+  else failwith "Can't init console"
   
 let close_console () : unit =
   ()
@@ -119,7 +123,7 @@ let print_code prog =
 
 let write_out msg =
   let file = "log.txt" in
-  (* Write message to file *)
+  (* Write message into file *)
   let oc = open_out file in
   (* create or truncate file, return channel *)
   Printf.fprintf oc "%s\n" msg;

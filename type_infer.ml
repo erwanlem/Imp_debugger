@@ -1,3 +1,4 @@
+(* Types used in typechecker *)
 type typ =
   | TVar of string
   | TInt
@@ -5,6 +6,8 @@ type typ =
   | TNull
   | TArray of typ
   | Fun of typ * typ
+
+
 
 let rec typ_to_string = function
 | TInt -> "int"
@@ -15,6 +18,7 @@ let rec typ_to_string = function
 | Fun (t1, t2) -> "Fun " ^ typ_to_string t1 ^ " -> " ^ typ_to_string t2   
 
 
+(* check if var v is in type t *)
 let rec var_in v t =
   match t with
   | TVar name -> v = name

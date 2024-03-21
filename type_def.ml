@@ -2,6 +2,7 @@
 
 module Env = Map.Make(String)
 
+(* Values used for interpretation *)
 type value =
   | VInt  of int
   | VBool of bool

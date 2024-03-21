@@ -4,10 +4,8 @@ open Type_infer
 exception Error of string
 let error s = raise (Error s)
 
-let print_constraints c =
-  Printf.printf "[";
-  List.iter (fun (c1, c2) -> Printf.printf "%s = %s\n%!" (typ_to_string c1) (typ_to_string c2)) c;
-  Printf.printf "]"
+let constraints_to_int c =
+  List.fold_left (fun acc (c1, c2) -> Printf.sprintf "%s = %s\n%!" (typ_to_string c1) (typ_to_string c2) ^ acc) "" c
 
 
 
@@ -157,7 +155,7 @@ let typecheck_prog p =
   let main_constr = check_function p.main tenv in
   let constr = constraints @ main_constr in
   ignore(unify constr);
-  print_constraints constr
+  Standard_out.write_out (constraints_to_int constr)
 
   (*print_constraints (unify constr)*)
   

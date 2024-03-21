@@ -208,7 +208,6 @@ let exec_prog (p : program): unit =
                               with Not_found -> 
                                 (try Env.find string !global_env 
                               with Not_found -> 
-                                Standard_out.write_out (Printf.sprintf "Variable %s not found, %d %d" string (Env.cardinal env) (Env.cardinal !global_env)); 
                                 Standard_out.close_console ();
                                 exit 0
                                 ); 
