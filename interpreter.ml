@@ -14,6 +14,8 @@ let global_env = ref Env.empty
 
 let undo_stack = ref []
 
+let breakpoints = Hashtbl.create 10
+
 (*
    Appels de fonction
   
@@ -35,16 +37,16 @@ let exec_prog (p : program): unit =
   let f_main = List.find (fun e -> e.name = "main") p.functions in
   let code = List.fold_right (fun (s, v, id) acc -> 
     match v with
-    | None -> Set(s, Null, id) :: acc
+    | None -> Set(s, Null, id, f_main.line) :: acc
     | Some e ->
-      Set(s, e, id) :: acc ) p.globals [(Expr(Call("main", []), f_main.id))]
+      Set(s, e, id, f_main.line) :: acc ) p.globals [(Expr(Call("main", []), f_main.id, f_main.line))]
   in
 
   let p_seq = ref code in
   
   let rec exec_instr (i : instr) env =
     match i with
-    | Print (e, id)        ->
+    | Print (e, id, line)        ->
       Standard_out.instr_id := id;
       (match find_call e env with
       | None -> (match eval e env with VInt i  -> Printf.printf "%d%!" i
@@ -52,34 +54,34 @@ let exec_prog (p : program): unit =
                                     | _       -> Printf.printf "Null%!"); ([], env)
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p [Print(e', id)] env )
+        call_fun f p [Print(e', id, line)] env )
 
-    | Set (s, e, id)     ->
+    | Set (s, e, id, line)     ->
       Standard_out.instr_id := id;
       (match find_call e env with
       | None -> if Env.mem s env then let env' = Env.add s (eval e env) env in ([], env') 
                 else ( global_env := Env.add s (eval e env) !global_env; ([], env))
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p [Set(s, e', id)] env )
+        call_fun f p [Set(s, e', id, line)] env )
 
-    | If (e, s1, s2, id) ->
+    | If (e, s1, s2, id, line) ->
       Standard_out.instr_id := id;
       (match find_call e env with
         | None -> if evalb e env then (s1, env) else (s2, env)
         | Some (f, p, e') -> 
           local_env_stack := (env :: !local_env_stack);
-          call_fun f p [If(e', s1, s2, id)] env )
+          call_fun f p [If(e', s1, s2, id, line)] env )
 
-    | While (e, s, id)   ->
+    | While (e, s, id, line)   ->
       Standard_out.instr_id := id;
       (match find_call e env with
-        | None -> if evalb e env then (s @ [While(e, s, id)], env) else ([], env)
+        | None -> if evalb e env then (s @ [While(e, s, id, line)], env) else ([], env)
         | Some (f, p, e') -> 
           local_env_stack := (env :: !local_env_stack);
-          call_fun f p [While(e', s, id)] env )
+          call_fun f p [While(e', s, id, line)] env )
     
-    | Return (e, id)       ->
+    | Return (e, id, line)       ->
       Standard_out.instr_id := id;
       (match find_call e env with
       | None ->
@@ -90,9 +92,9 @@ let exec_prog (p : program): unit =
           ([], env) 
       | Some (f, p, e') -> 
         local_env_stack := (env :: !local_env_stack);
-        call_fun f p [Return (e', id)] env)
+        call_fun f p [Return (e', id, line)] env)
 
-    | Expr (e, id)         -> 
+    | Expr (e, id, line)         -> 
       Standard_out.instr_id := id; 
       (match find_call e env with
       | None ->
@@ -107,7 +109,7 @@ let exec_prog (p : program): unit =
       )
 
 
-    | SetArr (e1, e2, e3, id) ->
+    | SetArr (e1, e2, e3, id, line) ->
         Standard_out.instr_id := id;
         let a = Array.copy (evala e1 env) in
         let i = evali e2 env in
@@ -131,8 +133,8 @@ let exec_prog (p : program): unit =
     let call_env = List.fold_left2 (fun acc a b -> Env.add a (eval b env) acc) Env.empty (List.rev f.params) param in
     let fun_code = List.fold_right (fun (s, v, id) acc ->
       match v with
-      | None -> Set(s, Null, id) :: acc
-      | Some e -> Set(s, e, id) :: acc ) f.locals f.code
+      | None -> Set(s, Null, id, f.line) :: acc
+      | Some e -> Set(s, e, id, f.line) :: acc ) f.locals f.code
     in
     (fun_code @ next_instr, call_env)
 
@@ -235,8 +237,8 @@ let exec_prog (p : program): unit =
     | GetArr (e1, e2)     -> let a = evala e1 env in
                             let i = evali e2 env in
                             a.(i)
-    | Continuation        -> let h = List.hd !tmp in 
-                              tmp := List.tl !tmp; 
+    | Continuation        -> let h = List.hd !tmp in
+                              tmp := List.tl !tmp;
                               h
     | _                   -> VNull (* Should never happened *)
 
@@ -257,6 +259,26 @@ let exec_prog (p : program): unit =
                   Standard_out.print_code p;
                   ((instr' @ l'), env')
   in
+
+  let next_break seq env =
+    match seq with
+    | [] -> ([], env)
+    | instr :: l' ->
+      let rec loop seq env =
+        match seq with
+        | [] -> ([], env)
+        | instr :: l' -> 
+          if Hashtbl.mem breakpoints (Utils.get_instr_line instr) then (seq, env)
+          else 
+            let instr', env' = (exec_instr instr env) in
+            loop (instr' @ l') env'
+      in
+      let seq', env' = loop seq env in
+      ignore (Standard_out.clear_console ());
+      Standard_out.print_env env' !global_env;
+      Standard_out.print_code p;
+      (seq', env')
+  in
   
   let step_over seq env =
     match seq with
@@ -264,7 +286,7 @@ let exec_prog (p : program): unit =
     | instr :: l' ->
       let step_id =
       match instr with
-      | While(_, _, _) ->
+      | While(_, _, _, _) ->
         (match l' with
         | [] -> -1
         | instr' :: ll' -> Utils.get_instr_id instr')
@@ -283,6 +305,7 @@ let exec_prog (p : program): unit =
         step seq env
       else begin
       let seq', env' = loop seq env in
+      ignore (Standard_out.clear_console ());
       Standard_out.print_env env' !global_env;
       Standard_out.print_code p;
       (seq', env') end
@@ -304,13 +327,20 @@ let exec_prog (p : program): unit =
 
   let match_entry entry =
       if (!p_seq) = [] then begin (Standard_out.close_console (); false) end else begin
-     match entry with
+     match Command_regex.get_command entry with
       | "exit"      -> Standard_out.close_console (); false
 
       | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
                         let p', env' = step (!p_seq) (!env) in
+                        p_seq := p';
+                        env := env';
+                        true
+
+      | "step"      -> undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        
+                        let p', env' = next_break (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
                         true
@@ -332,6 +362,11 @@ let exec_prog (p : program): unit =
                         local_env_stack := stack;
                         true)
                       else true
+
+      | "break"     ->  let line = Command_regex.get_int_param entry in
+                        Printf.printf "BREAK %d\n%!" line;
+                        Hashtbl.replace breakpoints line ();
+                        true
 
       | c           -> true end;
 

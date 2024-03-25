@@ -28,7 +28,7 @@ let add_env l tenv =
   List.fold_left (fun (env, code) (s, e, id) ->
     match e with
     | None -> (Env.add s (get_var_name ()) env, code)
-    | Some e -> (Env.add s (get_var_name ()) env, Set(s, e, id) :: code)
+    | Some e -> (Env.add s (get_var_name ()) env, Set(s, e, id, {pos_fname=""; pos_lnum=0; pos_bol=0; pos_cnum=0}) :: code)
     ) (tenv, []) l
 
 let typecheck_prog p =
@@ -104,30 +104,30 @@ let typecheck_prog p =
   in
 
   let rec check_instr i tenv var = match i with
-    | Print (e, _) ->
+    | Print (e, _, _) ->
       let c, t = type_expr e tenv in
       (c) (* Accepte tous les types *)
-    | If(e, i1, i2, _) ->
+    | If(e, i1, i2, _, _) ->
       let c1, t = type_expr e tenv in
       let c2 = check_seq i1 tenv var in
       let c3 = check_seq i2 tenv var in
       ([(t, TBool)] @ c1 @ c2 @ c3)
-    | While(e, s, _)   ->
+    | While(e, s, _, _)   ->
       let c = check_seq s tenv var in
       let c1, t1 = type_expr e tenv in
       ([(t1, TBool)] @ c1 @ c)
-    | Expr(e, _)       ->
+    | Expr(e, _, _)       ->
       let c, t = type_expr e tenv in
       let n = get_var_name () in
       ([(t, TVar n)] @ c)
-    | Return(e, _)     ->
+    | Return(e, _, _)     ->
       let c, t = type_expr e tenv in 
       ([(TVar var, t)] @ c)
-    | Set(m, e, _)     ->
+    | Set(m, e, _, _)     ->
       let c, t = type_expr e tenv in
       let var_name = try Env.find m tenv with Not_found -> (failwith "Variable " ^ m ^ " not found") in
       ([(TVar var_name, t)] @ c)
-    | SetArr (e1, e2, e3, _) ->
+    | SetArr (e1, e2, e3, _, _) ->
       let c1, t1 = type_expr e1 tenv in
       let c2, t2 = type_expr e2 tenv in
       let c3, t3 = type_expr e3 tenv in

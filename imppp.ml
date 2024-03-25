@@ -73,9 +73,9 @@ and print_elts fmt = function
   | e::elts -> fprintf fmt "%a;@ %a" print_expr e print_elts elts
 
 let rec print_instr fmt = function
-  | Print (e, id) -> mark_open fmt id; fprintf fmt "print(@[%a@]);" print_expr e; mark_close fmt id
-  | Set(x, e, id) -> mark_open fmt id; fprintf fmt "%s = @[%a@];" x print_expr e; mark_close fmt id
-  | If(e, s1, s2, id) ->if !instr_id = id then 
+  | Print (e, id, _) -> mark_open fmt id; fprintf fmt "print(@[%a@]);" print_expr e; mark_close fmt id
+  | Set(x, e, id, _) -> mark_open fmt id; fprintf fmt "%s = @[%a@];" x print_expr e; mark_close fmt id
+  | If(e, s1, s2, id, _) ->if !instr_id = id then 
                         fprintf fmt 
                         "@[<v>@[<v 2>@{<color>if (@[%a@])@} {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
                         print_expr e print_seq s1 print_seq s2
@@ -83,11 +83,11 @@ let rec print_instr fmt = function
                           fprintf fmt 
                           "@[<v>@[<v 2>if (@[%a@]) {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
                           print_expr e print_seq s1 print_seq s2
-  | While(e, s, id) -> mark_open fmt id; fprintf fmt "@[<v>@[<v 2>while (@[%a@]) {@,%a@]@,}@]"
+  | While(e, s, id, _) -> mark_open fmt id; fprintf fmt "@[<v>@[<v 2>while (@[%a@]) {@,%a@]@,}@]"
                      print_expr e print_seq s; mark_close fmt id
-  | Return (e, id) -> mark_open fmt id; fprintf fmt "return(@[%a@]);" print_expr e; mark_close fmt id
-  | Expr (e, id) -> mark_open fmt id; fprintf fmt "@[%a@];" print_expr e; mark_close fmt id
-  | SetArr(t, i, e, id) -> mark_open fmt id; fprintf fmt "%a[%a] = @[%a@];" 
+  | Return (e, id, _) -> mark_open fmt id; fprintf fmt "return(@[%a@]);" print_expr e; mark_close fmt id
+  | Expr (e, id, _) -> mark_open fmt id; fprintf fmt "@[%a@];" print_expr e; mark_close fmt id
+  | SetArr(t, i, e, id, _) -> mark_open fmt id; fprintf fmt "%a[%a] = @[%a@];" 
                          print_expr t print_expr i print_expr e; mark_close fmt id
 and print_seq fmt = function
   | [] -> fprintf fmt ""

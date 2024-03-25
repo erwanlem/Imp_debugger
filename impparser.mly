@@ -49,7 +49,7 @@ fun_def:
 | FUNCTION name=IDENT LPAR param=separated_list(COMMA, IDENT) RPAR
     BEGIN decl=list(var_decl) code=list(instr) END
     { {name; code; params=List.fold_left (fun acc id -> id :: acc) [] param; 
-    locals=decl; id=instruction_id ()} }
+    locals=decl; id=instruction_id (); line=$startpos} }
 ;
 
 var_decl:
@@ -63,16 +63,16 @@ simple_var_decl:
 
 
 instr:
-| PRINT LPAR e=expr RPAR SEMI                       { Print(e, instruction_id ()) }
-| IF LPAR e=expr RPAR BEGIN i1=list(instr) END ELSE BEGIN i2=list(instr) END   { If(e, i1, i2, instruction_id ()) }
-| IF LPAR e=expr RPAR BEGIN i1=list(instr) END      { If(e, i1, [], instruction_id ()) }
+| PRINT LPAR e=expr RPAR SEMI                       { Print(e, instruction_id (), $startpos) }
+| IF LPAR e=expr RPAR BEGIN i1=list(instr) END ELSE BEGIN i2=list(instr) END   { If(e, i1, i2, instruction_id (), $startpos) }
+| IF LPAR e=expr RPAR BEGIN i1=list(instr) END      { If(e, i1, [], instruction_id (), $startpos) }
 | var=expr EQUAL value=expr SEMI                    { match var with
-                                                      | Var name -> Set (name, value, instruction_id ())
-                                                      | GetArr(id, e) -> SetArr(id, e, value, instruction_id ()) 
+                                                      | Var name -> Set (name, value, instruction_id (), $startpos)
+                                                      | GetArr(id, e) -> SetArr(id, e, value, instruction_id (), $startpos) 
                                                       | _ -> failwith "Invalid ID name" }
-| e=expr SEMI                                       { Expr (e, instruction_id ()) }
-| RETURN LPAR e=expr RPAR SEMI                      { Return (e, instruction_id ()) }
-| WHILE LPAR cond=expr RPAR BEGIN i=list(instr) END { While(cond, i, instruction_id ()) }
+| e=expr SEMI                                       { Expr (e, instruction_id (), $startpos) }
+| RETURN LPAR e=expr RPAR SEMI                      { Return (e, instruction_id (), $startpos) }
+| WHILE LPAR cond=expr RPAR BEGIN i=list(instr) END { While(cond, i, instruction_id (), $startpos) }
 ;
 
 expr:

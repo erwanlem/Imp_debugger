@@ -42,25 +42,26 @@ type expr =
   | Continuation
 
 type instr =
-  | Print  of expr * int
-  | Set    of string * expr * int
-  | If     of expr * seq * seq * int
-  | While  of expr * seq * int
-  | Return of expr * int
-  | Expr   of expr * int
-  | SetArr of expr * expr * expr * int
+  | Print  of expr * int * Lexing.position
+  | Set    of string * expr * int * Lexing.position
+  | If     of expr * seq * seq * int * Lexing.position
+  | While  of expr * seq * int * Lexing.position
+  | Return of expr * int * Lexing.position
+  | Expr   of expr * int * Lexing.position
+  | SetArr of expr * expr * expr * int * Lexing.position
 and seq = instr list
 
 type function_def = {
-  name:   string;
-  id  :   int;
+  name  : string;
+  id    : int;
   params: string list;
   locals: (string * expr option * int) list;
-  code:   seq;
+  code  : seq;
+  line  : Lexing.position;
 }
 
 type program = {
-  globals:   (string * expr option * int) list;
+  globals  : (string * expr option * int) list;
   functions: function_def list;
-  main: function_def;
+  main     : function_def;
 }
