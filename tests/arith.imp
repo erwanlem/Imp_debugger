@@ -1,7 +1,7 @@
 var x;
 var y;
 
-function f(var i, var j, var k) {
+function f(i, j, k) {
   var a;
 
   if (i==0) {
@@ -13,7 +13,7 @@ function f(var i, var j, var k) {
   }
 }
 
-function f3(var v) {
+function f3(v) {
   while (v < 10) {
     v = v+1;
   }

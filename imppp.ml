@@ -111,8 +111,12 @@ let rec print_vars fmt = function
                               fprintf fmt "@[<v>var %s = @[%a@];@,%a@]" x print_expr e print_vars vars
 
 let print_fdef fmt fdef =
-  fprintf fmt "@[<v>@[<v 2>function %s(@[%a@]) {@,%a@,%a@]@,}@,@]" 
-    fdef.name print_params fdef.params print_vars fdef.locals print_seq fdef.code
+  if fdef.id = !instr_id then
+    fprintf fmt "@[<v>@[<v 2>@{<color>function %s(@[%a@]) @} {@,%a@,%a@]@,}@,@]" 
+      fdef.name print_params fdef.params print_vars fdef.locals print_seq fdef.code
+  else
+    fprintf fmt "@[<v>@[<v 2>function %s(@[%a@]) {@,%a@,%a@]@,}@,@]" 
+      fdef.name print_params fdef.params print_vars fdef.locals print_seq fdef.code
 
 let rec print_functions fmt = function
   | [] -> fprintf fmt ""

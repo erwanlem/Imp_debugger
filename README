@@ -30,4 +30,8 @@ Les fonctionnalités implémentées sont les suivantes:
 
 
 ## Documentation:
+**Ocaml Format**
 https://hal.science/hal-01503081/file/format-unraveled.pdf
+
+**Ocaml garbage collector**
+https://gallium.inria.fr/~doligez/publications/cuoq-doligez-mlw-2008.pdf

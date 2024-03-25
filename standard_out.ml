@@ -71,7 +71,8 @@ let init_console () =
   else failwith "Can't init console"
   
 let close_console () : unit =
-  ()
+  Printf.printf "\nExecution finished\n";
+  exit 0
 
 
 
@@ -100,20 +101,21 @@ let print_line str =
 
 let clear_console () =
   Sys.command "clear"
-  (*Curses.wmove window y x*)
 
 
 
 let print_code prog =
   Imppp.instr_id := !instr_id;
   Imppp.find_instr := false;
-  (*let _err = Curses.wmove window (begy+10) begx in*)
   let code = Format.sprintf "%s" (Imppp.print_program Format.str_formatter prog) in
   (try 
   let p1, p2, t = get_str_parts code in
   
   Printf.printf "\x1b[37m%s\x1b0" p1;
+
+  (* current instruction coloration *)
   Printf.printf "\x1b[31m%s\x1b0" t;
+  
   Printf.printf "\x1b[37m%s\x1b0" p2;
 
   Imppp.write_out (code)

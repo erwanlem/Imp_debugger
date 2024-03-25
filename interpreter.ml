@@ -147,6 +147,7 @@ let exec_prog (p : program): unit =
   and find_call e env =
     match e with
     | Call (s, l)         -> let f = List.find (fun f -> f.name = s) p.functions in
+                              Standard_out.instr_id := f.id;
                               (* Récupère les appels dans les paramètres de l'appel 
                                  Returns
                                   Some(function, args, Continue) si appel
@@ -237,7 +238,7 @@ let exec_prog (p : program): unit =
     | Continuation        -> let h = List.hd !tmp in 
                               tmp := List.tl !tmp; 
                               h
-    | _                   -> VNull
+    | _                   -> VNull (* Should never happened *)
 
   
   in
@@ -302,7 +303,7 @@ let exec_prog (p : program): unit =
 
 
   let match_entry entry =
-      if (!p_seq) = [] then (Standard_out.close_console (); false) else begin
+      if (!p_seq) = [] then begin (Standard_out.close_console (); false) end else begin
      match entry with
       | "exit"      -> Standard_out.close_console (); false
 
