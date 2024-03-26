@@ -1,10 +1,11 @@
 
 module Env = Map.Make(String)
 
-type value =
+type id_array = { array : value array; id : int }
+and value =
   | VInt  of int
   | VBool of bool
-  | VArray of value array
+  | VArray of id_array
   | VNull
 
 

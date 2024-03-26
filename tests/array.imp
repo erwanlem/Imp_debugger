@@ -1,12 +1,14 @@
 var t;
 var t2;
 var t3;
+
 function f() {
   var z = 1;
   var a = 10;
   print(a + 10);
   return (a);
 }
+
 function main() {
   var x = 1;
   var z = x + 1;
@@ -14,5 +16,6 @@ function main() {
   t = { 1; 2; x; };
   t2 = { t; t; };
   t3 = { t2; t2; };
+  t[0] = 3;
   print(0);
 }

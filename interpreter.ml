@@ -1,5 +1,10 @@
 open Imp
 
+(********************************************)
+(*            GLOBAL VARIABLES              *)
+(********************************************)
+
+
 (* Pile environnements locaux aux fonctions *)
 let local_env_stack = ref []
 
@@ -12,9 +17,17 @@ let env = ref Env.empty
 (* Environnement global *)
 let global_env = ref Env.empty
 
+(* Stack for step back *)
 let undo_stack = ref []
 
+(* breakpoint lines *)
 let breakpoints = Hashtbl.create 10
+
+(********************************************)
+(********************************************)
+(********************************************)
+
+
 
 (*
    Appels de fonction
@@ -30,6 +43,11 @@ let breakpoints = Hashtbl.create 10
         - ajouter l'instruction avec l'appel de fonction qui attend le résultat
    - Si pas d'appel de fonction alors évaluer l'instruction
 *)
+
+
+
+
+
 
 
 (* Fonction principale *)
@@ -111,11 +129,13 @@ let exec_prog (p : program): unit =
 
     | SetArr (e1, e2, e3, id, line) ->
         Standard_out.instr_id := id;
-        let a = Array.copy (evala e1 env) in
+        let a = evala e1 env in
+        let arr = a.array in
+        let arr_id = a.id in
         let i = evali e2 env in
-        a.(i) <- eval e3 env;
+        arr.(i) <- eval e3 env;
         match e1 with
-        | Var n -> let env' = Env.add n (VArray(a)) env in ([], env')
+        | Var n -> let env' = Env.add n (VArray({array=arr; id=arr_id})) env in ([], env')
         | _ -> ([], env)
 
 
@@ -233,10 +253,10 @@ let exec_prog (p : program): unit =
                             
     | Array el            -> let r = Array.make (List.length el) (VInt 0) in
                             List.iteri (fun i e -> r.(i) <- eval e env) el;
-                            VArray( r )
+                            VArray( {array=r; id=Utils.gen_array_id () } )
     | GetArr (e1, e2)     -> let a = evala e1 env in
                             let i = evali e2 env in
-                            a.(i)
+                            a.array.(i)
     | Continuation        -> let h = List.hd !tmp in
                               tmp := List.tl !tmp;
                               h
@@ -248,7 +268,11 @@ let exec_prog (p : program): unit =
   Standard_out.init_console ();
 
 
-  (* fonction avance d'un pas *)
+  (****************************************************)
+  (*                Debugger features                 *)
+  (****************************************************)
+
+  (* Next line fuction *)
   let step seq env =
     match seq with
     | [] -> ([], env)
@@ -260,6 +284,7 @@ let exec_prog (p : program): unit =
                   ((instr' @ l'), env')
   in
 
+  (* Next breakpoint function *)
   let next_break seq env =
     match seq with
     | [] -> ([], env)
@@ -274,12 +299,14 @@ let exec_prog (p : program): unit =
             loop (instr' @ l') env'
       in
       let seq', env' = loop seq env in
+      let seq', env' = step seq' env' in
       ignore (Standard_out.clear_console ());
       Standard_out.print_env env' !global_env;
       Standard_out.print_code p;
       (seq', env')
   in
   
+  (* Step over function *)
   let step_over seq env =
     match seq with
     | [] -> ([], env)
@@ -312,8 +339,9 @@ let exec_prog (p : program): unit =
       
   in
 
-
-  (* fonction retour arrière *)
+  (* step back function
+    If the previous line is more than 1 line backward it goes back to this line
+  *)
   let step_back prev seq env =
     let instr, env', stack, ret, id_instr = prev in
     ignore (Standard_out.clear_console ());
@@ -321,16 +349,20 @@ let exec_prog (p : program): unit =
     Standard_out.print_code p;
     Standard_out.instr_id := id_instr;
     (instr, env', stack, ret)
+
+
+  (***********************************************************)
+  (***********************************************************)
+  (***********************************************************)
   
   in
-
 
   let match_entry entry =
       if (!p_seq) = [] then begin (Standard_out.close_console (); false) end else begin
      match Command_regex.get_command entry with
       | "exit"      -> Standard_out.close_console (); false
 
-      | "next"      ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
+      | "next"      ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
                         let p', env' = step (!p_seq) (!env) in
@@ -338,14 +370,14 @@ let exec_prog (p : program): unit =
                         env := env';
                         true
 
-      | "step"      -> undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+      | "step"      ->  undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
                         let p', env' = next_break (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
                         true
         
-      | "so"        ->  (* ajoute instruction, environnement et pile des env locaux sur la pile d'actions *)
+      | "so"        ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
                         let p', env' = step_over (!p_seq) (!env) in

@@ -81,7 +81,7 @@ let print_env env env_global =
   let rec print_value = function
   | VBool b  -> Printf.sprintf "%b" b
   | VInt  i  -> Printf.sprintf "%d" i
-  | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a ^ "]"
+  | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a.array ^ "] : (addr" ^ string_of_int a.id ^ ")"
   | VNull     -> Printf.sprintf "Null"
   in
   (Env.iter (

@@ -1,5 +1,12 @@
 open Imp
 
+let gen_array_id =
+  let i = ref 0 in
+  fun () ->
+    let v = !i in
+    i := !i + 1;
+    v
+
 
 let get_instr_id = function
   | Print(_, id, _) | Return(_, id, _) | Expr(_, id, _) -> id

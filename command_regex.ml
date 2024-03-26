@@ -20,7 +20,7 @@ let reg_step = Str.regexp "step"
 *)
 let get_command c =
   if Str.string_match reg_next c 0 then "next"
-  else if Str.string_match reg_undo c 0 then "next"
+  else if Str.string_match reg_undo c 0 then "undo"
   else if Str.string_match reg_so c 0 then "so"
   else if Str.string_match reg_exit c 0 then "exit"
   else if Str.string_match reg_break c 0 then "break"
