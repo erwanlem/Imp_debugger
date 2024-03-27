@@ -114,7 +114,7 @@ let print_code prog =
   Printf.printf "\x1b[37m%s\x1b0" p1;
 
   (* current instruction coloration *)
-  Printf.printf "\x1b[31m%s\x1b0" t;
+  Printf.printf "\x1b[36m%s\x1b0" t;
   
   Printf.printf "\x1b[37m%s\x1b0" p2;
 

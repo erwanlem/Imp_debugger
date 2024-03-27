@@ -1,33 +1,5 @@
+open Global
 open Imp
-
-(********************************************)
-(*            GLOBAL VARIABLES              *)
-(********************************************)
-
-
-(* Pile environnements locaux aux fonctions *)
-let local_env_stack = ref []
-
-(* Variable temporaire résultat de fonction *)
-let tmp = ref []
-
-(* Environnement local *)
-let env = ref Env.empty
-
-(* Environnement global *)
-let global_env = ref Env.empty
-
-(* Stack for step back *)
-let undo_stack = ref []
-
-(* breakpoint lines *)
-let breakpoints = Hashtbl.create 10
-
-(********************************************)
-(********************************************)
-(********************************************)
-
-
 
 (*
    Appels de fonction
