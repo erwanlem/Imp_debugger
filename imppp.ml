@@ -124,6 +124,7 @@ let rec print_functions fmt = function
 
 let print_program fmt p =
   pp_set_tags str_formatter true;
+  pp_print_if_newline str_formatter ();
   pp_set_formatter_stag_functions str_formatter tags_funs;
   fprintf fmt "@[<v>%a@,%a@]@." print_vars p.globals print_functions p.functions;
   flush_str_formatter ()
