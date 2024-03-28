@@ -1,6 +1,6 @@
 open Imp
 
-let instr_id = ref 0
+let instr_id = ref (0)
 
 
 let buffer = ref ""
@@ -93,7 +93,8 @@ let print_env env env_global =
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
       Printf.printf "%s" out
-      ) env
+      ) env;
+  Printf.printf "\n"
 
 
 let print_line str =
@@ -118,8 +119,8 @@ let print_code prog =
   
   Printf.printf "\x1b[37m%s\x1b0" p2;
 
-  Imppp.write_out (code)
-  with NoColorTag -> (Printf.printf "%s" code; Imppp.write_out code) )
+  (*Imppp.write_out (code)*)
+  with NoColorTag -> (Printf.printf "%s" code; (*Imppp.write_out code*)) )
 
 
 

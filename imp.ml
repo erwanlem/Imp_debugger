@@ -56,13 +56,13 @@ type function_def = {
   name  : string;
   id    : int;
   params: string list;
-  locals: (string * expr option * int) list;
+  locals: (string * expr option * int * Lexing.position) list;
   code  : seq;
   line  : Lexing.position;
 }
 
 type program = {
-  globals  : (string * expr option * int) list;
+  globals  : (string * expr option * int * Lexing.position) list;
   functions: function_def list;
   main     : function_def;
 }

@@ -25,7 +25,7 @@ type tenv = typ Env.t
 
 let add_env l tenv =
   
-  List.fold_left (fun (env, code) (s, e, id) ->
+  List.fold_left (fun (env, code) (s, e, id, _) ->
     match e with
     | None -> (Env.add s (get_var_name ()) env, code)
     | Some e -> (Env.add s (get_var_name ()) env, Set(s, e, id, {pos_fname=""; pos_lnum=0; pos_bol=0; pos_cnum=0}) :: code)

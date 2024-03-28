@@ -54,11 +54,11 @@ fun_def:
 
 var_decl:
   | s=simple_var_decl SEMI { s }
-  | VAR id=IDENT EQUAL e=expr SEMI { (id, Some e, instruction_id ()) }
+  | VAR id=IDENT EQUAL e=expr SEMI { (id, Some e, instruction_id (), $startpos) }
 ;
 
 simple_var_decl:
-  | VAR id=IDENT { (id, None, instruction_id ()) }
+  | VAR id=IDENT { (id, None, instruction_id (), $startpos) }
 ;
 
 

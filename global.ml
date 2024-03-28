@@ -31,7 +31,7 @@ let env = (ref Env.empty : value Env.t ref)
 let global_env = (ref Env.empty : value Env.t ref)
 
 (* Stack for step back *)
-let undo_stack = (ref [] : (instr list * value Env.t * value Env.t list * value list * int) list ref)
+let undo_stack = (ref [] : (instr list * value Env.t * value Env.t * value Env.t list * value list * int) list ref)
 
 (* breakpoint lines *)
 let breakpoints = (Hashtbl.create 10 : (int, unit) Hashtbl.t)

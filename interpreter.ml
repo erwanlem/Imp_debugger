@@ -18,18 +18,14 @@ open Imp
 
 
 
-
-
-
-
 (* Fonction principale *)
 let exec_prog (p : program): unit =
   let f_main = List.find (fun e -> e.name = "main") p.functions in
-  let code = List.fold_right (fun (s, v, id) acc -> 
+  let code = List.fold_right (fun (s, v, id, l) acc -> 
     match v with
-    | None -> Set(s, Null, id, f_main.line) :: acc
+    | None -> Set(s, Null, id, l) :: acc
     | Some e ->
-      Set(s, e, id, f_main.line) :: acc ) p.globals [(Expr(Call("main", []), f_main.id, f_main.line))]
+      Set(s, e, id, l) :: acc ) p.globals [(Expr(Call("main", []), f_main.id, f_main.line))]
   in
 
   let p_seq = ref code in
@@ -123,10 +119,10 @@ let exec_prog (p : program): unit =
 
   and call_fun f param next_instr env =
     let call_env = List.fold_left2 (fun acc a b -> Env.add a (eval b env) acc) Env.empty (List.rev f.params) param in
-    let fun_code = List.fold_right (fun (s, v, id) acc ->
+    let fun_code = List.fold_right (fun (s, v, id, l) acc ->
       match v with
-      | None -> Set(s, Null, id, f.line) :: acc
-      | Some e -> Set(s, e, id, f.line) :: acc ) f.locals f.code
+      | None -> Set(s, Null, id, l) :: acc
+      | Some e -> Set(s, e, id, l) :: acc ) f.locals f.code
     in
     (fun_code @ next_instr, call_env)
 
@@ -238,6 +234,8 @@ let exec_prog (p : program): unit =
   in
   
   Standard_out.init_console ();
+  Standard_out.print_env !env !global_env;
+  Standard_out.print_code p;
 
 
   (****************************************************)
@@ -249,32 +247,31 @@ let exec_prog (p : program): unit =
     match seq with
     | [] -> ([], env)
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
-                  in 
-                  ignore (Standard_out.clear_console ());
-                  Standard_out.print_env env' !global_env;
-                  Standard_out.print_code p;
-                  ((instr' @ l'), env')
+                  in
+                  let seq' = instr' @ l' in
+                  Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
+                  (seq', env')
   in
 
   (* Next breakpoint function *)
   let next_break seq env =
-    match seq with
+    let seq, env = step seq env in
+    let rec loop seq env =
+      match seq with
+      | [] -> ([], env)
+      | instr :: l' -> 
+        if Hashtbl.mem breakpoints (Utils.get_instr_line instr) then (seq, env)
+        else 
+          let instr', env' = (exec_instr instr env) in
+          loop (instr' @ l') env'
+    in
+    let seq', env' =
+    (match seq with
     | [] -> ([], env)
     | instr :: l' ->
-      let rec loop seq env =
-        match seq with
-        | [] -> ([], env)
-        | instr :: l' -> 
-          if Hashtbl.mem breakpoints (Utils.get_instr_line instr) then (seq, env)
-          else 
-            let instr', env' = (exec_instr instr env) in
-            loop (instr' @ l') env'
-      in
-      let seq', env' = loop seq env in
-      let seq', env' = step seq' env' in
-      ignore (Standard_out.clear_console ());
-      Standard_out.print_env env' !global_env;
-      Standard_out.print_code p;
+      let seq', env' = loop seq env in (seq', env')) 
+    in
+      Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
       (seq', env')
   in
   
@@ -304,9 +301,7 @@ let exec_prog (p : program): unit =
         step seq env
       else begin
       let seq', env' = loop seq env in
-      ignore (Standard_out.clear_console ());
-      Standard_out.print_env env' !global_env;
-      Standard_out.print_code p;
+      Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
       (seq', env') end
       
   in
@@ -315,12 +310,13 @@ let exec_prog (p : program): unit =
     If the previous line is more than 1 line backward it goes back to this line
   *)
   let step_back prev seq env =
-    let instr, env', stack, ret, id_instr = prev in
+    let instr, env', globals, stack, ret, id_instr = prev in
+    Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
     ignore (Standard_out.clear_console ());
-    Standard_out.print_env env' !global_env;
+    Standard_out.print_env env' globals;
     Standard_out.print_code p;
     Standard_out.instr_id := id_instr;
-    (instr, env', stack, ret)
+    (instr, env', globals, stack, ret)
 
 
   (***********************************************************)
@@ -335,41 +331,54 @@ let exec_prog (p : program): unit =
       | "exit"      -> Standard_out.close_console (); false
 
       | "next"      ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
-                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));
                         
                         let p', env' = step (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
+                        ignore (Standard_out.clear_console ());
+                        Standard_out.print_env env' !global_env;
+                        Standard_out.print_code p;
                         true
 
-      | "step"      ->  undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
-                        
+      | "step"      ->  undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         let p', env' = next_break (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
+                        ignore (Standard_out.clear_console ());
+                        Standard_out.print_env env' !global_env;
+                        Standard_out.print_code p;
                         true
         
       | "so"        ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
-                        undo_stack := (!p_seq, !env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         
                         let p', env' = step_over (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
+                        ignore (Standard_out.clear_console ());
+                        Standard_out.print_env env' !global_env;
+                        Standard_out.print_code p;
                         true
                         
       | "undo"      -> if List.length (!undo_stack) > 0 then
                       (
                         (* Récupère l'état précédent *)
-                       let p', env', stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in
+                       let p', env', globals, stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in
                        undo_stack := List.tl !undo_stack;
-                        p_seq := p'; env := env'; tmp := ret;
+                        p_seq := p'; env := env'; tmp := ret; global_env := globals;
                         local_env_stack := stack;
+                        Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));
                         true)
                       else true
 
       | "break"     ->  let line = Command_regex.get_int_param entry in
-                        Printf.printf "BREAK %d\n%!" line;
-                        Hashtbl.replace breakpoints line ();
+                        if Hashtbl.mem breakpoints line then Hashtbl.remove breakpoints line
+                        else Hashtbl.replace breakpoints line ();
+                        ignore (Standard_out.clear_console ());
+                        Standard_out.print_env !env !global_env;
+                        Standard_out.print_code p;
                         true
 
       | c           -> true end;
