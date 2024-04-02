@@ -286,6 +286,10 @@ let exec_prog (p : program): unit =
         (match l' with
         | [] -> -1
         | instr' :: ll' -> Utils.get_instr_id instr')
+      | If (_, _, _, _, _) ->
+        (match l' with
+        | [] -> -1
+        | instr' :: ll' -> Utils.get_instr_id instr')
       | _ -> -1
       in
       let rec loop seq env =
@@ -313,6 +317,7 @@ let exec_prog (p : program): unit =
     let instr, env', globals, stack, ret, id_instr = prev in
     Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
     ignore (Standard_out.clear_console ());
+    Standard_out.print_arrays ();
     Standard_out.print_env env' globals;
     Standard_out.print_code p;
     Standard_out.instr_id := id_instr;
@@ -338,6 +343,7 @@ let exec_prog (p : program): unit =
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
+                        Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
                         true
@@ -347,6 +353,7 @@ let exec_prog (p : program): unit =
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
+                        Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
                         true
@@ -358,6 +365,7 @@ let exec_prog (p : program): unit =
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
+                        Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
                         true
@@ -377,6 +385,7 @@ let exec_prog (p : program): unit =
                         if Hashtbl.mem breakpoints line then Hashtbl.remove breakpoints line
                         else Hashtbl.replace breakpoints line ();
                         ignore (Standard_out.clear_console ());
+                        Standard_out.print_arrays ();
                         Standard_out.print_env !env !global_env;
                         Standard_out.print_code p;
                         true

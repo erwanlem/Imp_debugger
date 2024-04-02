@@ -74,16 +74,14 @@ let close_console () : unit =
   Printf.printf "\nExecution finished\n";
   exit 0
 
-
-
 let print_env env env_global =
-  (* Affichage des variables *)
   let rec print_value = function
-  | VBool b  -> Printf.sprintf "%b" b
-  | VInt  i  -> Printf.sprintf "%d" i
-  | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a.array ^ "] : (addr" ^ string_of_int a.id ^ ")"
-  | VNull     -> Printf.sprintf "Null"
+    | VBool b  -> Printf.sprintf "%b" b
+    | VInt  i  -> Printf.sprintf "%d" i
+    | VArray a -> "(addr" ^ string_of_int a.id ^ ")"
+    | VNull     -> Printf.sprintf "Null"
   in
+  (* Affichage des variables *)
   (Env.iter (
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
@@ -122,6 +120,29 @@ let print_code prog =
   (*Imppp.write_out (code)*)
   with NoColorTag -> (Printf.printf "%s" code; (*Imppp.write_out code*)) )
 
+
+let print_arrays () =
+  let rec print_array = function
+    | VBool b  -> Printf.sprintf "%b" b
+    | VInt  i  -> Printf.sprintf "%d" i
+    | VArray a -> "[ " ^ Array.fold_left (fun acc e -> acc ^ print_value e ^ Printf.sprintf "; ") "" a.array ^ "]"
+    | VNull     -> Printf.sprintf "Null"
+  and print_value = function
+    | VBool b  -> Printf.sprintf "%b" b
+    | VInt  i  -> Printf.sprintf "%d" i
+    | VArray a -> "(addr" ^ string_of_int a.id ^ ")"
+    | VNull     -> Printf.sprintf "Null"
+  in
+  Array_liveness.reset_mark ();
+  Array_liveness.mark_liveness ();
+  let h = Array_liveness.array_addr in
+  Hashtbl.iter (fun k (b, a) ->
+    if b then
+      Printf.printf ("addr%d : %s (Alive)\n%!") k (print_array (VArray a))
+    else
+      Printf.printf ("addr%d : %s (Free)\n%!") k (print_array (VArray a))
+      ) h;
+  Printf.printf "\n"
 
 
 let write_out msg =
