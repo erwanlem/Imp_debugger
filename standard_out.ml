@@ -1,7 +1,7 @@
 open Imp
 
 (* Id of the current instruction *)
-let instr_id = ref (0)
+let instr_id = ref (-1)
 
 (* Returns the current window *)
 let get_window () =
@@ -55,7 +55,8 @@ let get_str_parts str =
 
 let rec match_key match_entry =
   let input = read_line () in
-  match_entry input; match_key match_entry
+  match_entry input;
+  match_key match_entry
 
 
 (* get the console ready for display

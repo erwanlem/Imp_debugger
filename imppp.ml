@@ -80,23 +80,44 @@ and print_elts fmt = function
   | e::elts -> fprintf fmt "%a;@ %a" print_expr e print_elts elts
 
 let rec print_instr fmt = function
-  | Print (e, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum); mark_open fmt id; fprintf fmt " print(@[%a@]);" print_expr e; mark_close fmt id
-  | Set(x, e, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum); mark_open fmt id; fprintf fmt " %s = @[%a@];" x print_expr e; mark_close fmt id
-  | If(e, s1, s2, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum);
+  | Print (e, id, l) -> if !instr_id = id then
+                          fprintf fmt "%s @{<color>print(@[%a@]);@}" (color_breakpoint l.pos_lnum) print_expr e
+                        else
+                          fprintf fmt "%s print(@[%a@]);" (color_breakpoint l.pos_lnum) print_expr e
+  | Set(x, e, id, l) -> if !instr_id = id then
+                          fprintf fmt "%s @{<color>%s = @[%a@];@}" (color_breakpoint l.pos_lnum) x print_expr e
+                        else
+                          fprintf fmt "%s %s = @[%a@];" (color_breakpoint l.pos_lnum) x print_expr e
+  | If(e, s1, s2, id, l) ->
                         if !instr_id = id then 
                         fprintf fmt 
-                        "@[<v>@[<v 2>@{<color>if (@[%a@])@} {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
-                          print_expr e print_seq s1 print_seq s2
+                        "@[<v>@[<v 2>@{<color>%s if (@[%a@])@} {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
+                          (color_breakpoint l.pos_lnum) print_expr e print_seq s1 print_seq s2
                         else
                           fprintf fmt 
-                          "@[<v>@[<v 2>if (@[%a@]) {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
-                          print_expr e print_seq s1 print_seq s2
-  | While(e, s, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum); mark_open fmt id; fprintf fmt " @[<v>@[<v 2>while (@[%a@]) {@,%a@]@,}@]"
-                     print_expr e print_seq s; mark_close fmt id
-  | Return (e, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum); mark_open fmt id; fprintf fmt " return(@[%a@]);" print_expr e; mark_close fmt id
-  | Expr (e, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum); mark_open fmt id; fprintf fmt " @[%a@];" print_expr e; mark_close fmt id
-  | SetArr(t, i, e, id, l) -> fprintf fmt "%s" (color_breakpoint l.pos_lnum); mark_open fmt id; fprintf fmt " %a[%a] = @[%a@];"
-                         print_expr t print_expr i print_expr e; mark_close fmt id
+                          "@[<v>@[<v 2>%s if (@[%a@]) {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
+                            (color_breakpoint l.pos_lnum) print_expr e print_seq s1 print_seq s2
+  | While(e, s, id, l) ->
+                        if !instr_id = id then
+                          fprintf fmt " @[<v>@[<v 2>%s @{<color>while (@[%a@]) {@}@,%a@]@,}@]"
+                          (color_breakpoint l.pos_lnum) print_expr e print_seq s
+                        else
+                          fprintf fmt " @[<v>@[<v 2>%s while (@[%a@]) {@,%a@]@,}@]"
+                          (color_breakpoint l.pos_lnum) print_expr e print_seq s
+  | Return (e, id, l) -> if !instr_id = id then
+                          fprintf fmt "%s @{<color>return(@[%a@]);@}" (color_breakpoint l.pos_lnum) print_expr e
+                        else
+                          fprintf fmt "%s return(@[%a@]);" (color_breakpoint l.pos_lnum) print_expr e
+  | Expr (e, id, l) -> if !instr_id = id then
+                        fprintf fmt "%s @{<color>@[%a@];@}" (color_breakpoint l.pos_lnum) print_expr e
+                      else
+                        fprintf fmt "%s @[%a@];" (color_breakpoint l.pos_lnum) print_expr e
+  | SetArr(t, i, e, id, l) -> if !instr_id = id then
+                                fprintf fmt "%s @{<color>%a[%a] = @[%a@];@}"
+                                  (color_breakpoint l.pos_lnum) print_expr t print_expr i print_expr e
+                            else
+                              fprintf fmt "%s %a[%a] = @[%a@];"
+                                  (color_breakpoint l.pos_lnum) print_expr t print_expr i print_expr e
 and print_seq fmt = function
   | [] -> fprintf fmt ""
   | [i] -> fprintf fmt "%a" print_instr i

@@ -277,6 +277,14 @@ let exec_prog (p : program): unit =
   
   (* Step over function *)
   let step_over seq env =
+
+    let has_fun_call = function
+      | Print(e, _, _) | Return(e, _, _) | Expr(e, _, _) | Set(_, e, _, _) -> not (find_call e env = None)
+      | SetArr(e1, e2, e3, id, _) ->
+        not (find_call e1 env = None && find_call e2 env = None && find_call e3 env = None)
+      | _ -> false
+    in
+
     match seq with
     | [] -> ([], env)
     | instr :: l' ->
@@ -284,13 +292,18 @@ let exec_prog (p : program): unit =
       match instr with
       | While(_, _, _, _) ->
         (match l' with
-        | [] -> -1
+        | [] -> -2
         | instr' :: ll' -> Utils.get_instr_id instr')
       | If (_, _, _, _, _) ->
         (match l' with
-        | [] -> -1
+        | [] -> -2
         | instr' :: ll' -> Utils.get_instr_id instr')
-      | _ -> -1
+      | _ -> 
+        if has_fun_call instr then
+          (match l' with
+          | [] -> -2
+          | instr' :: ll' -> Utils.get_instr_id instr')
+        else -1
       in
       let rec loop seq env =
         match seq with
@@ -305,7 +318,10 @@ let exec_prog (p : program): unit =
         step seq env
       else begin
       let seq', env' = loop seq env in
-      Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
+      if seq' <> [] then
+        Standard_out.instr_id := Utils.get_instr_id (List.hd seq')
+      else 
+        Standard_out.instr_id := -1;
       (seq', env') end
       
   in
@@ -377,7 +393,7 @@ let exec_prog (p : program): unit =
                        undo_stack := List.tl !undo_stack;
                         p_seq := p'; env := env'; tmp := ret; global_env := globals;
                         local_env_stack := stack;
-                        Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));
+                        (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
                         true)
                       else true
 

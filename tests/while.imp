@@ -1,7 +1,15 @@
+function f() {
+  return (0);
+}
+
+
 function main() {
   var x = 1;
   var y = 10;
   var z = 0;
+
+  f();
+
   while (x < y) {
     y = y-x;
     z = z+1;
