@@ -1,11 +1,9 @@
 open Imp
 
+(* Id of the current instruction *)
 let instr_id = ref (0)
 
-
-let buffer = ref ""
-
-
+(* Returns the current window *)
 let get_window () =
   ()
 
@@ -55,9 +53,6 @@ let get_str_parts str =
 
 
 
-
-
-
 let rec match_key match_entry =
   let input = read_line () in
   match_entry input; match_key match_entry
@@ -95,9 +90,11 @@ let print_env env env_global =
   Printf.printf "\n"
 
 
+  (* Print string in console *)
 let print_line str =
   Printf.printf "%s" str
 
+(* Clear console *)
 let clear_console () =
   Sys.command "clear"
 
@@ -115,10 +112,10 @@ let print_code prog =
   (* current instruction coloration *)
   Printf.printf "\x1b[36m%s\x1b0" t;
   
+  (* After current instruction *)
   Printf.printf "\x1b[37m%s\x1b0" p2;
 
-  (*Imppp.write_out (code)*)
-  with NoColorTag -> (Printf.printf "%s" code; (*Imppp.write_out code*)) )
+  with NoColorTag -> (Printf.printf "%s" code) )
 
 
 let print_arrays () =
