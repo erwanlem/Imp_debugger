@@ -1,18 +1,43 @@
 open Global
 open Imp
 
-let array_addr = (Hashtbl.create 10 : (int, bool * id_array) Hashtbl.t)
+let arrays = ref [| |]
+let marked = ref []
+
+let recover = ref []
+
+(*
+let array_addr = ref (Hashtbl.create 10 : (int, bool * id_array) Hashtbl.t)
+*)
+
+
+let state_back () =
+  arrays := List.hd !recover;
+  recover := List.tl !recover
+
+let save_state () =
+  recover := (Array.copy !arrays) :: !recover
 
 let add_array (a : Imp.id_array) =
-  Hashtbl.replace array_addr a.id (true, a)
+  if not (Array.mem a !arrays) then
+    arrays := Array.append !arrays [| a |]
+
+let list_arrays () =
+  Array.fold_left (fun acc (e:id_array) -> 
+    if (List.mem e.id !marked) then
+      (true, e) :: acc
+    else
+      (false, e) :: acc
+    ) [] !arrays
 
 let reset_mark () =
-  Hashtbl.iter (fun k (b, v) ->
-    Hashtbl.replace array_addr k (false, v)) array_addr
+  marked := []
+
 
 let mark_liveness () =
   let rec mark (a : id_array) =
-    Hashtbl.replace array_addr a.id (true, a);
+    add_array a;
+    marked := a.id :: !marked;
     Array.iter (fun e ->
       match e with
       | VArray a' -> mark a'

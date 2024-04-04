@@ -3,7 +3,6 @@
 *)
 
 
-
 let reg_next = Str.regexp "next"
 let reg_undo = Str.regexp "undo"
 let reg_so = Str.regexp "so"
@@ -16,7 +15,7 @@ let reg_step = Str.regexp "step"
 (* 
   -- Get command value from user entry --
   If it finds a regular expression that match with the entry returns the command name (without parameters)
-  Otherwise returns empty string
+  Otherwise returns an empty string
 *)
 let get_command c =
   if Str.string_match reg_next c 0 then "next"
@@ -30,7 +29,7 @@ let get_command c =
 (*
   Get int parameter from user input
   Suppose that there's only one parameter
-  If there is no integer throw error 
+  If there's no integer throws error 
 *)
 let get_int_param c =
   if Str.search_forward reg_int_param c 0 > 0 then int_of_string (Str.matched_string c)

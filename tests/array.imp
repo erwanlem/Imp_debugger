@@ -13,6 +13,7 @@ function f() {
 function main() {
   var x = 1;
   var z = x + 1;
+  var a;
   print(10);
   t0 = { 1; };
   t = { 1; 2; x; };
@@ -20,6 +21,8 @@ function main() {
   t = t0;
   //t3 = { t2; t2; };
   t2[0] = 0;
+  
+  a = f();
 
   print(0);
 }

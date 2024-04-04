@@ -108,12 +108,13 @@ let print_code prog =
   (try 
   let p1, p2, t = get_str_parts code in
   
+  (* Previous instructions *)
   Printf.printf "\x1b[37m%s\x1b0" p1;
 
   (* current instruction coloration *)
   Printf.printf "\x1b[36m%s\x1b0" t;
   
-  (* After current instruction *)
+  (* Next instructions *)
   Printf.printf "\x1b[37m%s\x1b0" p2;
 
   with NoColorTag -> (Printf.printf "%s" code) )
@@ -133,13 +134,14 @@ let print_arrays () =
   in
   Array_liveness.reset_mark ();
   Array_liveness.mark_liveness ();
-  let h = Array_liveness.array_addr in
-  Hashtbl.iter (fun k (b, a) ->
+
+  Printf.printf "%d\n%!" (List.length (Array_liveness.list_arrays ()));
+  List.iter (fun (b, (a:id_array)) ->
     if b then
-      Printf.printf ("addr%d : %s (Alive)\n%!") k (print_array (VArray a))
+      Printf.printf ("addr%d : %s (Alive)\n%!") a.id (print_array (VArray a))
     else
-      Printf.printf ("addr%d : %s (Free)\n%!") k (print_array (VArray a))
-      ) h;
+      Printf.printf ("addr%d : %s (Free)\n%!") a.id (print_array (VArray a))
+  ) (Array_liveness.list_arrays ());
   Printf.printf "\n"
 
 

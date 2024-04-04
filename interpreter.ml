@@ -21,12 +21,24 @@ open Imp
 (* Fonction principale *)
 let exec_prog (p : program): unit =
   let f_main = List.find (fun e -> e.name = "main") p.functions in
+
   let code = List.fold_right (fun (s, v, id, l) acc -> 
     match v with
     | None -> Set(s, Null, id, l) :: acc
     | Some e ->
       Set(s, e, id, l) :: acc ) p.globals [(Expr(Call("main", []), f_main.id, f_main.line))]
   in
+
+  (* Get the first instruction *)
+  if List.hd code = (Expr(Call("main", []), f_main.id, f_main.line)) then begin
+    if f_main.locals = [] then Standard_out.instr_id := Utils.get_instr_id (List.hd f_main.code)
+    else 
+      let _, _, id, _ = List.hd f_main.locals in
+      Standard_out.instr_id := id
+    end
+  else
+    Standard_out.instr_id := Utils.get_instr_id (List.hd code);
+
 
   let p_seq = ref code in
   
@@ -237,7 +249,7 @@ let exec_prog (p : program): unit =
   Standard_out.print_env !env !global_env;
   Standard_out.print_code p;
 
-
+  
   (****************************************************)
   (*                Debugger features                 *)
   (****************************************************)
@@ -249,7 +261,7 @@ let exec_prog (p : program): unit =
     | instr :: l' -> let instr', env' = (exec_instr instr env) 
                   in
                   let seq' = instr' @ l' in
-                  Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
+                  if seq' <> [] then Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
                   (seq', env')
   in
 
@@ -261,9 +273,11 @@ let exec_prog (p : program): unit =
       | [] -> ([], env)
       | instr :: l' -> 
         if Hashtbl.mem breakpoints (Utils.get_instr_line instr) then (seq, env)
-        else 
+        else begin
+          Array_liveness.mark_liveness ();
           let instr', env' = (exec_instr instr env) in
           loop (instr' @ l') env'
+        end
     in
     let seq', env' =
     (match seq with
@@ -271,7 +285,7 @@ let exec_prog (p : program): unit =
     | instr :: l' ->
       let seq', env' = loop seq env in (seq', env')) 
     in
-      Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
+      if seq' <> [] then Standard_out.instr_id := Utils.get_instr_id (List.hd seq');
       (seq', env')
   in
   
@@ -332,11 +346,11 @@ let exec_prog (p : program): unit =
   let step_back prev seq env =
     let instr, env', globals, stack, ret, id_instr = prev in
     Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
+    Array_liveness.state_back ();
     ignore (Standard_out.clear_console ());
     Standard_out.print_arrays ();
     Standard_out.print_env env' globals;
     Standard_out.print_code p;
-    Standard_out.instr_id := id_instr;
     (instr, env', globals, stack, ret)
 
 
@@ -353,18 +367,20 @@ let exec_prog (p : program): unit =
 
       | "next"      ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
-                        Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));
+                        (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
                         
                         let p', env' = step (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
+                        Array_liveness.save_state ();
                         Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
                         true
 
-      | "step"      ->  undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+      | "step"      ->  Array_liveness.save_state ();
+                        undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         let p', env' = next_break (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
@@ -381,6 +397,7 @@ let exec_prog (p : program): unit =
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
+                        Array_liveness.save_state ();
                         Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
@@ -389,8 +406,8 @@ let exec_prog (p : program): unit =
       | "undo"      -> if List.length (!undo_stack) > 0 then
                       (
                         (* Récupère l'état précédent *)
-                       let p', env', globals, stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in
-                       undo_stack := List.tl !undo_stack;
+                        let p', env', globals, stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in
+                        undo_stack := List.tl !undo_stack;
                         p_seq := p'; env := env'; tmp := ret; global_env := globals;
                         local_env_stack := stack;
                         (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
