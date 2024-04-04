@@ -347,7 +347,7 @@ let exec_prog (p : program): unit =
     let instr, env', globals, stack, ret, id_instr = prev in
     Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
     Array_liveness.state_back ();
-    ignore (Standard_out.clear_console ());
+    (*ignore (Standard_out.clear_console ());*)
     Standard_out.print_arrays ();
     Standard_out.print_env env' globals;
     Standard_out.print_code p;
@@ -367,20 +367,20 @@ let exec_prog (p : program): unit =
 
       | "next"      ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        Array_liveness.save_state ();
                         (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
                         
                         let p', env' = step (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
-                        Array_liveness.save_state ();
                         Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
                         true
 
-      | "step"      ->  Array_liveness.save_state ();
-                        undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+      | "step"      ->  undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        Array_liveness.save_state ();
                         let p', env' = next_break (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
@@ -392,12 +392,12 @@ let exec_prog (p : program): unit =
         
       | "so"        ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
                         undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        Array_liveness.save_state ();
                         
                         let p', env' = step_over (!p_seq) (!env) in
                         p_seq := p';
                         env := env';
                         ignore (Standard_out.clear_console ());
-                        Array_liveness.save_state ();
                         Standard_out.print_arrays ();
                         Standard_out.print_env env' !global_env;
                         Standard_out.print_code p;
@@ -405,11 +405,20 @@ let exec_prog (p : program): unit =
                         
       | "undo"      -> if List.length (!undo_stack) > 0 then
                       (
+                        let instr, env', globals, stack, ret, id_instr = List.hd (!undo_stack) in
+
                         (* Récupère l'état précédent *)
-                        let p', env', globals, stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in
+                        (*let p', env', globals, stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in*)
                         undo_stack := List.tl !undo_stack;
-                        p_seq := p'; env := env'; tmp := ret; global_env := globals;
+                        p_seq := instr; env := env'; tmp := ret; global_env := globals;
                         local_env_stack := stack;
+
+                        Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
+                        Array_liveness.state_back ();
+                        ignore (Standard_out.clear_console ());
+                        Standard_out.print_arrays ();
+                        Standard_out.print_env env' globals;
+                        Standard_out.print_code p;
                         (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
                         true)
                       else true

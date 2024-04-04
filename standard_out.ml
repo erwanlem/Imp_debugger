@@ -135,7 +135,6 @@ let print_arrays () =
   Array_liveness.reset_mark ();
   Array_liveness.mark_liveness ();
 
-  Printf.printf "%d\n%!" (List.length (Array_liveness.list_arrays ()));
   List.iter (fun (b, (a:id_array)) ->
     if b then
       Printf.printf ("addr%d : %s (Alive)\n%!") a.id (print_array (VArray a))
