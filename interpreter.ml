@@ -338,20 +338,6 @@ let exec_prog (p : program): unit =
         Standard_out.instr_id := -1;
       (seq', env') end
       
-  in
-
-  (* step back function
-    If the previous line is more than 1 line backward it goes back to this line
-  *)
-  let step_back prev seq env =
-    let instr, env', globals, stack, ret, id_instr = prev in
-    Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
-    Array_liveness.state_back ();
-    (*ignore (Standard_out.clear_console ());*)
-    Standard_out.print_arrays ();
-    Standard_out.print_env env' globals;
-    Standard_out.print_code p;
-    (instr, env', globals, stack, ret)
 
 
   (***********************************************************)

@@ -3,7 +3,7 @@ open Imp
 
 (**
     This file contains functions which follow arrays in memory.
-    At each instruction of the program, arrays are append to 
+    At each instruction of the program, arrays are added to 
     the `arrays` variable (if they're not already in).
     We then follow variables and each time we find an array
     we add its id in the marked variable.

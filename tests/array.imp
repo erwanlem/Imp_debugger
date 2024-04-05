@@ -11,7 +11,7 @@ function f() {
 }
 
 function main() {
-  var x = 1;
+  var x;
   var z = x + 1;
   var a;
   print(10);

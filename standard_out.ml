@@ -78,11 +78,13 @@ let print_env env env_global =
     | VNull     -> Printf.sprintf "Null"
   in
   (* Affichage des variables *)
+  Printf.printf "Globals:\n%!";
   (Env.iter (
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
       Printf.printf "%s" out
       ) env_global);
+  Printf.printf "\nLocals:\n%!";
   Env.iter (
     fun s v ->
       let out = s ^ ": " ^ (print_value v) ^ "\n" in
