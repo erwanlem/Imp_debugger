@@ -115,9 +115,10 @@ let exec_prog (p : program): unit =
         let i = evali e2 env in
         arr.(i) <- eval e3 env;
         match e1 with
-        | Var n -> let env' = Env.add n (VArray({array=arr; id=arr_id})) env in ([], env')
+        | Var n -> 
+          if Env.mem n env then let env' = Env.add n (VArray({array=arr; id=arr_id})) env in ([], env') 
+          else ( global_env := Env.add n (VArray({array=arr; id=arr_id})) !global_env; ([], env))
         | _ -> ([], env)
-
 
   and evali e env = match eval e env with
     | VInt n -> n
@@ -131,6 +132,7 @@ let exec_prog (p : program): unit =
 
   and call_fun f param next_instr env =
     let call_env = List.fold_left2 (fun acc a b -> Env.add a (eval b env) acc) Env.empty (List.rev f.params) param in
+    let call_env = List.fold_left (fun acc (s, v, id, l) -> Env.add s VNull acc) call_env f.locals in
     let fun_code = List.fold_right (fun (s, v, id, l) acc ->
       match v with
       | None -> Set(s, Null, id, l) :: acc
@@ -352,40 +354,41 @@ let exec_prog (p : program): unit =
       | "exit"      -> Standard_out.close_console (); false
 
       | "next"      ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
-                        undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        undo_stack := (!p_seq, !Global.env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         Array_liveness.save_state ();
                         (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
+                        Standard_out.write_out (Printf.sprintf "len local stack = %d\nlen current local memory = %d\n%!" (List.length !Global.local_env_stack) (Env.cardinal !Global.env));
                         
-                        let p', env' = step (!p_seq) (!env) in
+                        let p', env' = step (!p_seq) (!Global.env) in
                         p_seq := p';
-                        env := env';
+                        Global.env := env';
                         ignore (Standard_out.clear_console ());
                         Standard_out.print_arrays ();
-                        Standard_out.print_env env' !global_env;
+                        Standard_out.print_env !Global.env !Global.global_env;
                         Standard_out.print_code p;
                         true
 
-      | "step"      ->  undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+      | "step"      ->  undo_stack := (!p_seq, !Global.env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         Array_liveness.save_state ();
-                        let p', env' = next_break (!p_seq) (!env) in
+                        let p', env' = next_break (!p_seq) (!Global.env) in
                         p_seq := p';
-                        env := env';
+                        Global.env := env';
                         ignore (Standard_out.clear_console ());
                         Standard_out.print_arrays ();
-                        Standard_out.print_env env' !global_env;
+                        Standard_out.print_env !Global.env !Global.global_env;
                         Standard_out.print_code p;
                         true
         
       | "so"        ->  (* ajoute instruction, environnement, pile des env locaux, retour fonction et id instr sur la pile d'actions *)
-                        undo_stack := (!p_seq, !env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
+                        undo_stack := (!p_seq, !Global.env, !global_env, !local_env_stack, !tmp, !Standard_out.instr_id) :: !undo_stack;
                         Array_liveness.save_state ();
                         
-                        let p', env' = step_over (!p_seq) (!env) in
+                        let p', env' = step_over (!p_seq) (!Global.env) in
                         p_seq := p';
-                        env := env';
+                        Global.env := env';
                         ignore (Standard_out.clear_console ());
                         Standard_out.print_arrays ();
-                        Standard_out.print_env env' !global_env;
+                        Standard_out.print_env !Global.env !Global.global_env;
                         Standard_out.print_code p;
                         true
                         
@@ -396,14 +399,14 @@ let exec_prog (p : program): unit =
                         (* Récupère l'état précédent *)
                         (*let p', env', globals, stack, ret = step_back (List.hd (!undo_stack)) (!p_seq) (!env) in*)
                         undo_stack := List.tl !undo_stack;
-                        p_seq := instr; env := env'; tmp := ret; global_env := globals;
+                        p_seq := instr; Global.env := env'; tmp := ret; global_env := globals;
                         local_env_stack := stack;
 
                         Standard_out.instr_id := Utils.get_instr_id (List.hd instr);
                         Array_liveness.state_back ();
                         ignore (Standard_out.clear_console ());
                         Standard_out.print_arrays ();
-                        Standard_out.print_env env' globals;
+                        Standard_out.print_env !Global.env !Global.global_env;
                         Standard_out.print_code p;
                         (*Standard_out.write_out (Format.sprintf "Undo stack size = %d" (List.length !undo_stack));*)
                         true)
@@ -414,7 +417,7 @@ let exec_prog (p : program): unit =
                         else Hashtbl.replace breakpoints line ();
                         ignore (Standard_out.clear_console ());
                         Standard_out.print_arrays ();
-                        Standard_out.print_env !env !global_env;
+                        Standard_out.print_env !Global.env !Global.global_env;
                         Standard_out.print_code p;
                         true
 
