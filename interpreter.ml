@@ -350,6 +350,7 @@ let exec_prog (p : program): unit =
 
   let match_entry entry =
       if (!p_seq) = [] then begin (Standard_out.close_console (); false) end else begin
+      let ret =
      match Command_regex.get_command entry with
       | "exit"      -> Standard_out.close_console (); false
 
@@ -421,8 +422,17 @@ let exec_prog (p : program): unit =
                         Standard_out.print_code p;
                         true
 
-      | c           -> true end;
+      | c           -> true 
+    in
 
+    (* Check if there are still instructions *)
+    if (!p_seq) = [] then begin 
+      Standard_out.close_console ();
+      false 
+    end
+    else ret
+
+  end
   in
   ignore (Standard_out.match_key match_entry);
 

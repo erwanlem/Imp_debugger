@@ -1,0 +1,50 @@
+var t = { 3; 2; 1; };
+
+function partition(arr, begin, end) {
+    var pivot = arr[end];
+    var i = begin;
+    var j = begin;
+    var tmp;
+
+    while (j <= end-1) {
+        if (arr[j] <= pivot) {
+            tmp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = tmp;
+            i = i+1;
+        }
+        
+        j = j + 1;
+    }
+
+    tmp = arr[i];
+    arr[i] = arr[end];
+    arr[end] = tmp;
+
+    return (i);
+}
+
+
+function quicksort(arr, begin, end) {
+    var pivot;
+
+    if (begin >= end || begin < 0) {
+        // do nothing
+    } else {
+
+        pivot = partition(arr, begin, end);
+
+        quicksort(arr, begin, pivot-1);
+        quicksort(arr, pivot + 1, end);
+
+    }
+
+    return (0);
+
+}
+
+function main() {
+
+    quicksort(t, 0, 2);
+
+}

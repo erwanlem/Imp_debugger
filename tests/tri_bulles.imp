@@ -1,0 +1,27 @@
+var t0 = { 4; 3; 2; 1; };
+
+function tri_bulle(tab, taille) {
+    var i = taille-1;
+    var j;
+    var tmp;
+
+    while (i > 0) {
+        j = 0;
+        while (j < i) {
+            if (tab[j+1] < tab[j]) {
+                tmp = tab[j];
+                tab[j] = tab[j+1];
+                tab[j+1] = tmp;
+            }
+            j = j + 1;
+        }
+        i = i - 1;
+    }
+
+    return (tab);
+}
+
+function main() {
+
+    t0 = tri_bulle(t0, 4);
+}

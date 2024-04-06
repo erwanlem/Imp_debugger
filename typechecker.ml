@@ -118,8 +118,7 @@ let typecheck_prog p =
       ([(t1, TBool)] @ c1 @ c)
     | Expr(e, _, _)       ->
       let c, t = type_expr e tenv in
-      let n = get_var_name () in
-      ([(t, TVar n)] @ c)
+      (c)
     | Return(e, _, _)     ->
       let c, t = type_expr e tenv in 
       ([(TVar var, t)] @ c)

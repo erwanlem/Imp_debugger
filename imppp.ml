@@ -19,7 +19,7 @@ let color_breakpoint l =
   if Hashtbl.mem breakpoints l then
     Format.sprintf "\x1b[31m%d\x1b0\x1b[37m" l
   else
-    Format.sprintf "\x1b[37m%d\x1b0" l
+    Format.sprintf "\x1b[97m%d\x1b0\x1b[37m" l
 
 
 let tags_funs =
@@ -89,14 +89,26 @@ let rec print_instr fmt = function
                         else
                           fprintf fmt "%s %s = @[%a@];" (color_breakpoint l.pos_lnum) x print_expr e
   | If(e, s1, s2, id, l) ->
-                        if !instr_id = id then 
-                        fprintf fmt 
-                        "@[<v>@[<v 2>@{<color>%s if (@[%a@])@} {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
-                          (color_breakpoint l.pos_lnum) print_expr e print_seq s1 print_seq s2
-                        else
-                          fprintf fmt 
-                          "@[<v>@[<v 2>%s if (@[%a@]) {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
-                            (color_breakpoint l.pos_lnum) print_expr e print_seq s1 print_seq s2
+                        if !instr_id = id then begin
+                          if s2 = [] then 
+                            fprintf fmt 
+                            "@[<v>@[<v 2>%s @{<color>if (@[%a@])@} {@,%a@]@,@[<v 2>} @]@]" 
+                              (color_breakpoint l.pos_lnum) print_expr e print_seq s1
+                          else
+                            fprintf fmt 
+                            "@[<v>@[<v 2>%s @{<color>if (@[%a@])@} {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
+                              (color_breakpoint l.pos_lnum) print_expr e print_seq s1 print_seq s2
+                        end
+                        else begin
+                          if s2 = [] then 
+                            fprintf fmt 
+                            "@[<v>@[<v 2>%s if (@[%a@]) {@,%a@]@,@[<v 2>} @]@]" 
+                              (color_breakpoint l.pos_lnum) print_expr e print_seq s1
+                          else
+                            fprintf fmt 
+                            "@[<v>@[<v 2>%s if (@[%a@]) {@,%a@]@,@[<v 2>} else {@,%a@]@,}@]" 
+                              (color_breakpoint l.pos_lnum) print_expr e print_seq s1 print_seq s2
+                        end
   | While(e, s, id, l) ->
                         if !instr_id = id then
                           fprintf fmt " @[<v>@[<v 2>%s @{<color>while (@[%a@]) {@}@,%a@]@,}@]"
