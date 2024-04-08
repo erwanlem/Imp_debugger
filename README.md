@@ -3,12 +3,12 @@
 ## Travaux effectués
 
 Les fonctionnalités implémentées sont les suivantes:
-- fonctionnement général du débogueur avec
-    - **pas en avant** (`step`)
-    - **retour arrière** (`step_back`)
-    - **breakpoint**
-    - **passage d'un bloc** (`step_over`)
-    - **suivi mémoire** des tableaux
+- Commandes du débogueur:
+    - `next` : **pas en avant**
+    - `undo` : **retour arrière**
+    - `break n` **breakpoint** ligne n
+    - `so` : **step over** (passage d'un bloc)
+- **suivi des tableaux en mémoire**
 - améliorations du langage
     - **inférence de type**
 - affichage console
