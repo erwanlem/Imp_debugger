@@ -47,6 +47,7 @@ d'un langage impératif:
 
 
 \subsection{Stockage des variables}
+\label{store_var}
 Le langage \texttt{Imp} permet de créer des fonctions, des variables globales ainsi 
 que des variables globales. L'exécution pas à pas ainsi et les fonctionnalités comme 
 le retour en arrière ont nécessité une structuration différente du code. En effet, 
@@ -105,9 +106,78 @@ et unique type.
 
 \subsection{Les fonctionnalités du débogueur}
 
+\subsubsection{Commandes de débogage}
+Les commandes proposées sont:
+\begin{itemize}
+    \item \texttt{next} : passer à l'instrution suivante
+    \item \texttt{so}   : step over -- si appel de fonction, boucle ou condition passe au dessus
+    \item \texttt{step} : s'arrête au prochain breakpoint. Si pas de breakpoint exécute tout le programme
+    \item \texttt{break n} : ajoute un point d'arrêt à la ligne n
+    \item \texttt{undo} : retourner en arrière
+    \item \texttt{exit} : quitte le programme
+\end{itemize}
+
+Les commandes se basent principalement sur la fonction \verb|step| qui permet d'exécuter une 
+unique instruction et retourne le nouvelle environnement et les instructions suivantes.
+Le fait de retourner les instructions suivantes permet dans certains cas d'ajouter des 
+instructions après l'exécution d'une instruction. Prenons par exemple le cas d'une instruction 
+\verb|while|. Si la condition d'entrée est vraie alors on ajoute le corps de la boucle dans la 
+liste des prochaines instructions. Sinon rien n'est ajouté et les prochaines instructions sont 
+celles qui suivent le \verb|while|. On retrouve également ce fonctionnement avec les instructions 
+conditionnelles. Nous verrons par la suite le cas particulier des appels de fonction.
+À partir de \verb|step| on peut passer à l'instruction suivante (\verb|next|), sauter une boucle ou 
+condition (\verb|so|) en répétant \verb|step| tant qu'on est dans la boucle et aller au prochain 
+point d'arrêt (\verb|step|) en continuant \verb|step| tant que l'instruction n'est pas un point d'arrêt.
+Les points d'arrêt sont stockés dans une table de hachage avec pour clé les numéros de ligne des points 
+d'arrêt. Enfin comme expliqué en \ref{store_var} le retour en arrière se fait en récupérant le 
+dernier état du programme.
+
+\subsubsection{Les appels de fonctions}
+Les appels de fonctions ont été un point délicat à traiter. Les appels de fonctions 
+sont des expressions qui comme les boucles ou les conditions vont ajouter un ensemble 
+d'instructions. De plus, il faut créer un nouvel environnement local à l'appel. Ces 
+premières conditions n'ont pas vraiment posé de problème. La complexité vient du fait 
+que des appels de fonctions peuvent se trouver par exemple en paramètre d'appels de 
+fonctions, dans un tableau ou encore dans une opération arithmétique : il n'est 
+plus possible d'exécuter une instruction en une seule fois. La solution a été de créer 
+une fonction qui vérifie s'il y a un appel de fonction dans la prochaine instruction.
+Dans le cas où il n'y en a pas, on peut exécuter l'instruction et passer à la suivante.
+Dans le cas où on trouve un appel, on le remplace par une expression 
+spéciale appelée \verb|continuite| et on rajoute l'instruction modifiée à la séquence 
+d'instruction. On ajoute ensuite les instructions de notre fonction. Ainsi les 
+prochaines instructions seront celle de la fonction. Lorsqu'on trouve une instruction 
+\verb|return| la valeur retournée est ajouté dans une pile de retour. Un fois la 
+fonction terminée on retrouve notre instruction dont l'appel a été remplacé par 
+\verb|continuite|. L'expression \verb|continuite| est simplement remplacée par le 
+retour de l'appel de fonction stocké dans la pile de retour. Ce mécanisme d'appel 
+de fonction permet par exemple de gérer des cas comme \verb|a = f(x + g(x), h(y) - g(x))|
+pour lesquels on doit rester à la même instruction après les quatres appels. 
+
+
 \subsection{Suivi de la mémoire}
+Dans l'objectif de pouvoir suivre l'évolution de la mémoire, j'ai ajouté 
+les informations \textit{alive} et \textit{free} sur les tableaux. Ces 
+informations permettent de savoir si un tableau est toujours utilisé ou si 
+dans le cas contraire il n'est plus accessible et a été libéré. Pour obtenir 
+ces informations j'ai ajouté un identifiant unique à chaque tableau. À partir des 
+variables de notre environnement il suffit ensuite de marquer les identifiants des 
+tableaux qu'on trouve lors du suivi des variables. Les identifiants non marqués sont 
+libres. On retrouve ici un fonctionnement similaire à celui des \textit{Garbage Collector} 
+avec le \textit{mark and sweep}.
 
 \subsection{Affichage du code}
+L'affichage du code se fait avec un \textit{pretty printer}. Ce \textit{pretty printer} nous 
+permet d'obtenir une indentation du code pour obtenir un code lisible. Le 
+problème soulevé par l'affichage a été de colorer seulement une instruction pour 
+indiquer notre position dans le code. De plus la première version de ce débogueur 
+utilisant la librairie \textit{ncurses}, il a fallu trouver une solution pour laisser 
+la possibiliter d'ajouter de la couleur sans "casser" l'indentation. La solution 
+a été d'ajouter des balises \verb|<color>| avec le \textit{pretty printer}. Les 
+balises étant ajoutées avec la librairie \textit{Format} d'OCaml, cela nous garantit 
+que l'indentation sera conservée. J'ai ensuite utilisé dans expressions régulières afin 
+d'extraire les balises de la chaine de caractères obtenue. On peut finalement facilement 
+ajouter de la couleur sur la chaine extraite.
 
+\section{Conclusion}
 
 \end{document}

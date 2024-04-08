@@ -52,7 +52,7 @@ let list_arrays () =
       (true, e) :: acc
     else
       (false, e) :: acc
-    ) [] !arrays
+    ) [] (List.sort (fun (a:id_array) b -> if a.id < b.id then 1 else (if a.id = b.id then 0 else -1) ) !arrays)
 
 (* Reset marks *)
 let reset_mark () =
