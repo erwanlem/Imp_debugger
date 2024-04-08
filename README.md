@@ -15,6 +15,7 @@ Les fonctionnalités implémentées sont les suivantes:
     - option affichage standard
     - option affichage avec *ncurses*
 
+Le rapport du travail effectué est disponible dans le répertoire `report`.
 
 
 ## Utilisation
